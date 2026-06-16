@@ -8,6 +8,8 @@ import threading
 from dotenv import load_dotenv
 from tkinter import filedialog, messagebox
 import customtkinter as ctk
+import hashlib
+import pickle
 
 # =====================================================================
 # PREMIUM THEME CONFIGURATION (Silicon Valley Corporate Aesthetic)
@@ -38,7 +40,7 @@ PROVIDERS = [
 ]
 # =====================================================================
 
-# Premium User-Defined Palette Hex Codes 
+# Premium User-Defined Palette Hex Codes
 BG_MAIN = "#0D0E12"        # Deep Obsidian Base
 BG_CARD = "#161920"        # Elevated Slate Containers
 BORDER_COLOR = "#262930"   # Subtle crisp border
@@ -59,6 +61,7 @@ SETTINGS_FILE = BASE_DIR / "settings.json"
 STOP_WORDS_FILE = BASE_DIR / "STOP_WORDS.json"
 
 APP_VERSION = "1.0.0"
+EMBEDDINGS_CACHE_FILE = BASE_DIR / "embeddings_cache.pkl"
 #  ----------------------------------
 Notes = {}
 
@@ -67,10 +70,12 @@ model = None
 model_loaded = False
 is_online = False
 
-
+def get_hash(filepath):
+    with open(filepath,'rb') as f:
+        return hashlib.md5(f.read()).hexdigest()
 def check_internet_connection(timeout=3):
     try:
-        urllib.request.urlopen("https://openrouter.ai",timeout=timeout)
+        urllib.request.urlopen("https://google.com", timeout=timeout)
         return True
     except Exception:
         return False
@@ -109,8 +114,11 @@ def load_folder():
     if SETTINGS_FILE.exists():
         with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
             settings = json.load(f)
-            return settings.get("path_notes")
-
+            if "path_notes" in settings and settings["path_notes"]:
+                if os.path.exists(settings["path_notes"]):
+                    return settings.get("path_notes")
+                    
+            
     path_notes = filedialog.askdirectory(title="CHOOSE YOUR NOTES FOLDER.")
     if path_notes:
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
@@ -125,32 +133,44 @@ Notes_Cache = {}
 def load_notes_from_path(folder_path):
     """Helper method to completely re-index target files into memory."""
     ALLOWED_EXTENSIONS = {
-    ".txt",
-    ".md"
-}
+        ".txt",
+        ".md"
+    }
     global Notes
     Notes.clear()
     Embedding_cache.clear()
     Notes_Cache.clear()
+    disk_cache = {}
+    if EMBEDDINGS_CACHE_FILE.exists():
+        with open(EMBEDDINGS_CACHE_FILE,'rb') as f:
+            disk_cache = pickle.load(f)
     for files in os.listdir(folder_path):
+        notes_changed = False
         path = os.path.join(
             folder_path,
             files
         )
 
-        if ( Path(path).suffix.lower() not in ALLOWED_EXTENSIONS):
+        if (Path(path).suffix.lower() not in ALLOWED_EXTENSIONS):
             continue
         if os.path.isfile(path):
             try:
                 with open(path, "r", encoding="utf-8") as f:
-                    Notes[files] = f.read()
-                    encoded_notes = model.encode(
-                        Notes[files], convert_to_tensor=True
-                    )
-                    Embedding_cache[files] = encoded_notes
+                    content = f.read()
+                Notes[files] = content
+                file_hash = get_hash(path)
+                if files in disk_cache and disk_cache[files][0] == file_hash:
+                    Embedding_cache[files] = disk_cache[files][1]
+                else:
+                    Embedding_cache[files] = model.encode(content,convert_to_tensor=True)
+                    disk_cache[files] = (file_hash,Embedding_cache)
+                    notes_changed = True  
             except Exception as e:
                 print(f"Skipping unreadable asset {files}: {e}")
-
+        disk_cache = {k:v for k,v in disk_cache.items() if k in Notes}
+        if notes_changed:
+            with open(EMBEDDINGS_CACHE_FILE,'wb') as f:
+                pickle.dump(disk_cache,f)
 
 current_notes_path = load_folder()
 if current_notes_path:
@@ -165,6 +185,11 @@ else:
     print(
         "No notes folder configured."
     )
+    messagebox.showinfo(
+    "One Quick Step",
+    "Study Assistant needs to know where your notes live.\n\nHit ⚙ Path to point it to your notes folder — you only need to do this once."
+)
+    
 
 
 def load_stop_words():
@@ -221,30 +246,15 @@ def Ranking_System(keyword, question):
             continue
 
         scores[keys] = 0
-        txt_lines = notes.splitlines()
         notes_lower = notes.lower()
-        question_lower = question.lower()
-
-        headings = [
-            line.strip() for line in txt_lines if line.strip().startswith("*")
-        ]
-
         for word in keyword:
             word_lower = word.lower()
             if word_lower in keys.lower():
                 scores[keys] += 20
             if word_lower in notes_lower:
                 scores[keys] += 1
-            for line in txt_lines:
-                if line.strip().startswith("*") and word_lower in line.lower():
-                    scores[keys] += 5
 
-        for heading in headings:
-            clean_heading = heading.replace("*", "").strip().lower()
-            heading_words = clean_heading.split()
-            for hw in heading_words:
-                if hw in question_lower:
-                    scores[keys] += 3
+       
 
     encoded_question = model.encode(question, convert_to_tensor=True)
 
@@ -263,7 +273,10 @@ def Ranking_System(keyword, question):
         Final_Scores[key] = combined_score
 
     if not Final_Scores:
-        return "error.txt"
+        # FIX #1: return a consistent (list_or_str, tensor) tuple so the caller's
+        # unpacking `winning_file_name, encoded_question_tensor = ranking_result`
+        # never crashes.
+        return "error.txt", encoded_question
 
     best_note = [
         note_name
@@ -272,7 +285,7 @@ def Ranking_System(keyword, question):
         )[:3]
     ]
 
-    print(f"Selected Note: {best_note}")
+    print(f"Selected Notes: {best_note}")
     return best_note, encoded_question
 
 
@@ -351,31 +364,22 @@ def GenerateAnswer(question, context):
     return "CRITICAL FAILURE: All configured online AI service pipelines are currently exhausted or unreachable."
 
 
-def AnswerSystem(winning_file_name, encoded_question, original_question):
+def AnswerSystem(winning_file_names, encoded_question, original_question):
     try:
-        for filename in winning_file_name:
-            if filename.lower() == "error.txt" or filename not in Notes:
-                error_content = Notes.get(
-                    "error.txt", "An unexpected system error occurred."
-                )
-                return str(error_content)
         all_context = ""
-        for filename in winning_file_name:
-            note_content = Notes[filename]
-            all_context += filename + "\n" + note_content + "\n\n"
+        for filename in winning_file_names:
+            if filename in Notes:
+                all_context += f"SOURCE: {filename}\n{Notes[filename]}\n\n"
+
+        if not all_context:
+            return "No relevant context found in selected notes."
 
         ai_response = GenerateAnswer(original_question, all_context)
-
-        if "CRITICAL FAILURE:" in ai_response or not ai_response:
-            print("[FALLBACK] AI Pipeline failed. Reverting to local notes display.")
-            return all_context
-        else:
-            return ai_response
+        return ai_response if ai_response else all_context
 
     except Exception as e:
         print(f"Extraction Error: {e}")
-        return f"An operational breakdown occurred parsing this resource: {str(e)}"
-
+        return f"An operational breakdown occurred: {str(e)}"
 # =====================================================================
 # UI ARCHITECTURE
 # =====================================================================
@@ -395,50 +399,64 @@ class StudyAssistantUI(ctk.CTk):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # ------------------- DEDICATED SEPARATE SPLASH / LOADING SCREEN -------------------
+        # ------------------- SPLASH SCREEN -------------------
         self.loading_frame = ctk.CTkFrame(self, fg_color=BG_MAIN)
         self.loading_frame.grid(row=0, column=0, sticky="nsew")
         self.loading_frame.grid_rowconfigure(0, weight=1)
-        self.loading_frame.grid_rowconfigure(2, weight=1)
+        self.loading_frame.grid_rowconfigure(1, weight=0)
+        self.loading_frame.grid_rowconfigure(2, weight=0)
+        self.loading_frame.grid_rowconfigure(3, weight=0)
+        self.loading_frame.grid_rowconfigure(4, weight=0)
+        self.loading_frame.grid_rowconfigure(5, weight=1)
         self.loading_frame.grid_columnconfigure(0, weight=1)
 
-        self.loading_box = ctk.CTkFrame(
+        # App name — large, centered, indigo-tinted white
+        self.loading_app_name = ctk.CTkLabel(
             self.loading_frame,
-            fg_color=BG_CARD,
-            border_color=BORDER_COLOR,
-            border_width=1,
-            corner_radius=16,
+            text="Study Assistant",
+            font=ctk.CTkFont(family="Segoe UI", size=42, weight="bold"),
+            text_color="#E8EEFF",
         )
-        self.loading_box.grid(row=1, column=0, ipadx=40, ipady=20)
-        self.loading_box.grid_columnconfigure(0, weight=1)
+        self.loading_app_name.grid(row=1, column=0, pady=(0, 6))
 
-        self.loading_title = ctk.CTkLabel(
-            self.loading_box,
-            text="INITIALIZING SYSTEM",
-            
-            font=ctk.CTkFont(family="Segoe UI", size=22, weight="bold"),
-            text_color=TEXT_PRIMARY,
+        # Tagline — small, muted, below the name
+        self.loading_tagline = ctk.CTkLabel(
+            self.loading_frame,
+            text="Your personal AI-powered notebook",
+            font=ctk.CTkFont(family="Segoe UI", size=14),
+            text_color="#4F6080",
         )
-        
-        self.loading_title.grid(row=0, column=0, pady=(20, 10))
+        self.loading_tagline.grid(row=2, column=0, pady=(0, 48))
 
+        # Status text — updates as each stage completes
         self.loading_text = ctk.CTkLabel(
-            self.loading_box,
-            text="CHECKING NETWORK CONNECTION AND BOOTING SERVICES...",
-            font=ctk.CTkFont(family="Segoe UI", size=13),
-            text_color=TEXT_SECONDARY,
+            self.loading_frame,
+            text="Checking connection…",
+            font=ctk.CTkFont(family="Segoe UI", size=12),
+            text_color="#475569",
         )
-        self.loading_text.grid(row=1, column=0, pady=(0, 15))
+        self.loading_text.grid(row=3, column=0, pady=(0, 10))
 
+        # Thin progress bar — full width, barely 4px tall
         self.progress_bar = ctk.CTkProgressBar(
-            self.loading_box, width=320, height=6, fg_color=BG_MAIN
+            self.loading_frame,
+            height=3,
+            corner_radius=2,
+            fg_color="#1E2433",
+            progress_color=ACCENT_COLOR,
         )
-        self.progress_bar.grid(row=2, column=0, pady=(0, 20))
-        self.progress_bar.configure(
-            mode="indeterminate", progress_color=ACCENT_COLOR
-        )
+        self.progress_bar.grid(row=4, column=0, padx=200, pady=(0, 0), sticky="ew")
+        self.progress_bar.configure(mode="indeterminate")
         self.progress_bar.start()
 
+        # Version tag — bottom left, barely visible
+        self.loading_version = ctk.CTkLabel(
+            self.loading_frame,
+            text=f"v{APP_VERSION}",
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            text_color="#262930",
+        )
+        self.loading_version.grid(row=5, column=0, pady=(0, 20))
         # ------------------- MAIN INTERFACE (Hidden Initially) -------------------
         self.main_canvas = ctk.CTkFrame(self, fg_color="transparent")
         self.main_canvas.grid_columnconfigure(0, weight=1)
@@ -527,52 +545,102 @@ class StudyAssistantUI(ctk.CTk):
         )
         self.path_btn.grid(row=0, column=1)
 
-        # Output Terminal Text Window Architecture Updates
+        # ── OUTPUT PANEL ──────────────────────────────────────────────
         self.status_box = ctk.CTkTextbox(
             self.main_canvas,
             activate_scrollbars=True,
-            fg_color=BG_CARD,
-            border_color=BORDER_COLOR,
+            fg_color="#0F1117",          # slightly cooler than BG_CARD — gives the
+            border_color="#1E2433",      # output pane its own identity
             border_width=1,
-            text_color=TEXT_SECONDARY,  # Default readable body text color setup
-            font=ctk.CTkFont(family="Segoe UI", size=15), # Increased structural base visibility size
-            corner_radius=12,
-            spacing1=10,  # Line grouping intervals separations padding
-            spacing2=5,
-            spacing3=10,
+            text_color="#C8D0E0",        # softer than TEXT_PRIMARY — easier on long reads
+            font=ctk.CTkFont(family="Segoe UI", size=14),
+            corner_radius=14,
+            spacing1=4,
+            spacing2=2,
+            spacing3=8,
         )
         self.status_box.grid(row=3, column=0, sticky="nsew")
 
-        # Premium Layout Structural Font Size Hierarchy and Typographic Custom Configuration Tags
-        self.status_box._textbox.tag_config(
-            "heading", font=("Segoe UI", 20, "bold"), foreground=TEXT_PRIMARY
-        )  # Prominent Bold High-Contrast Concept Headers
-        self.status_box._textbox.tag_config(
-            "bullet", font=("Segoe UI", 15, "bold"), foreground=TEXT_INTERACTIVE
-        )  # Bullet Point Focus Highlighters
-        self.status_box._textbox.tag_config(
-            "divider", font=("Segoe UI", 12), foreground=TEXT_DISABLED
-        )  # Layout Section Separation Bars
-        self.status_box._textbox.tag_config(
-            "loading", font=("Segoe UI", 14, "italic"), foreground=TEXT_INTERACTIVE
-        )  # Loading States Highlights
-        self.status_box._textbox.tag_config(
-            "source", font=("Segoe UI", 13, "italic"), foreground=TEXT_SECONDARY
-        )  # Clean Reference Source Tracks Footers
+        tb = self.status_box._textbox   # shorthand for all tag_config calls below
 
-        self.status_box.insert(
-            "1.0", "System idle. Ready to analyze workspace strings."
+        # ── TYPOGRAPHIC TAG SYSTEM ─────────────────────────────────────
+        # H1 — big concept title, indigo-tinted white, generous leading
+        tb.tag_config(
+            "h1",
+            font=("Segoe UI", 22, "bold"),
+            foreground="#E8EEFF",
+            spacing1=18,
+            spacing3=4,
         )
+        # H2 — section subheading, muted indigo accent
+        tb.tag_config(
+            "h2",
+            font=("Segoe UI", 15, "bold"),
+            foreground="#818CF8",        # indigo-400 — connects to ACCENT_COLOR family
+            spacing1=14,
+            spacing3=2,
+        )
+        # Body — comfortable reading gray, slightly warm
+        tb.tag_config(
+            "body",
+            font=("Segoe UI", 14),
+            foreground="#C8D0E0",
+            spacing1=2,
+            spacing3=4,
+        )
+        # Bullet — soft cyan lead character + white text
+        tb.tag_config(
+            "bullet_marker",
+            font=("Segoe UI", 14, "bold"),
+            foreground="#38BDF8",        # sky-400 — cool contrast against indigo headings
+        )
+        tb.tag_config(
+            "bullet_text",
+            font=("Segoe UI", 14),
+            foreground="#CBD5E1",
+            spacing3=3,
+        )
+        # Divider — barely visible rule, purely structural
+        tb.tag_config(
+            "divider",
+            font=("Segoe UI", 6),
+            foreground="#1E2433",
+            spacing1=10,
+            spacing3=10,
+        )
+        # Loading pulse
+        tb.tag_config(
+            "loading",
+            font=("Segoe UI", 13, "italic"),
+            foreground="#818CF8",
+        )
+        # Source footer — smallest, most receded
+        tb.tag_config(
+            "source_label",
+            font=("Segoe UI", 11, "bold"),
+            foreground="#475569",
+            spacing1=14,
+            spacing3=2,
+        )
+        tb.tag_config(
+            "source_item",
+            font=("Segoe UI", 12),
+            foreground="#4F6080",
+            spacing3=2,
+        )
+
+        self.status_box.insert("1.0", "Ready.")
         self.status_box.configure(state="disabled")
 
-        # Start dependencies validation procedures
         threading.Thread(target=bg_model_loading, args=(self,), daemon=True).start()
 
     def display_critical_network_error(self, message):
         self.progress_bar.stop()
         self.progress_bar.configure(progress_color="#EF4444")
-        self.loading_title.configure(text="CONNECTION ERROR", text_color="#EF4444")
-        self.loading_text.configure(text=message, text_color=TEXT_PRIMARY)
+        self.loading_text.configure(text=message, text_color="#EF4444")
+        self.loading_tagline.configure(
+            text="Check your network and restart.", text_color="#475569"
+        )
 
     def update_loading_status(self, text_status):
         self.loading_text.configure(text=text_status)
@@ -583,36 +651,49 @@ class StudyAssistantUI(ctk.CTk):
         self.main_canvas.grid(row=0, column=0, padx=40, pady=30, sticky="nsew")
 
     def ui_change_path_flow(self):
-        path_notes = filedialog.askdirectory(
-            title="CHOOSE YOUR NEW NOTES FOLDER."
-        )
-        if path_notes:
-            with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-                json.dump({"path_notes": path_notes}, f, indent=4)
+        path_notes = filedialog.askdirectory(title="CHOOSE YOUR NEW NOTES FOLDER.")
+        if not path_notes:
+            return
+        if not model_loaded:
+            messagebox.showerror("ERROR", "Model is still loading, please wait.")
+            return
 
+        with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump({"path_notes": path_notes}, f, indent=4)
+
+        self.status_box.configure(state="normal")
+        self.status_box.delete("1.0", ctk.END)
+        self.status_box._textbox.insert("1.0", f"Re-indexing  {Path(path_notes).name}…", "loading")
+        self.status_box.configure(state="disabled")
+
+        self.path_btn.configure(state="disabled")
+        self.search_btn.configure(state="disabled")
+
+        def reindex_worker():
             load_notes_from_path(path_notes)
-            self.sub_header.configure(text=f"• Directory: {Path(path_notes).name}")
+            self.after(0, lambda: self.finish_reindex(path_notes))
 
-            self.status_box.configure(state="normal")
-            self.status_box.delete("1.0", ctk.END)
-            self.status_box.insert(
-                "1.0", f"System successfully re-indexed to:\n{path_notes}"
-            )
-            self.status_box.configure(state="disabled")
+        threading.Thread(target=reindex_worker, daemon=True).start()
+
+    def finish_reindex(self, path_notes):
+        self.sub_header.configure(text=f"• DIRECTORY: {Path(path_notes).name}")
+        self.status_box.configure(state="normal")
+        self.status_box.delete("1.0", ctk.END)
+        self.status_box._textbox.insert("1.0", f"Indexed  →  {path_notes}", "body")
+        self.status_box.configure(state="disabled")
+        self.path_btn.configure(state="normal")
+        self.search_btn.configure(state="normal")
 
     def ui_trigger_search_flow(self):
         if not model_loaded:
             return
-
         query_text = self.search_entry.get()
         self.search_entry.delete(0, ctk.END)
-
         if not query_text.strip():
             return
 
         self.search_btn.configure(state="disabled")
         self.search_entry.configure(state="disabled")
-
         self.status_box.configure(state="normal")
         self.status_box.delete("1.0", ctk.END)
         self.status_box.configure(state="disabled")
@@ -622,16 +703,15 @@ class StudyAssistantUI(ctk.CTk):
         def animate_terminal_loading(tick=0):
             if not is_loading:
                 return
-            dots = "." * (1 + (tick % 3))
+            frames = ["⠋", "⠙", "⠸", "⠴", "⠦", "⠇"]
+            spinner = frames[tick % len(frames)]
             self.status_box.configure(state="normal")
             self.status_box.delete("1.0", ctk.END)
             self.status_box._textbox.insert(
-                "1.0",
-                f"[SYSTEM PROCESSING AND QUERYING PIPELINES{dots}]",
-                "loading",
+                "1.0", f"  {spinner}  Thinking…", "loading"
             )
             self.status_box.configure(state="disabled")
-            self.after(400, lambda: animate_terminal_loading(tick + 1))
+            self.after(120, lambda: animate_terminal_loading(tick + 1))
 
         animate_terminal_loading()
 
@@ -643,16 +723,14 @@ class StudyAssistantUI(ctk.CTk):
 
             extracted_keywords = keyword(query_text)
             ranking_result = Ranking_System(extracted_keywords, query_text)
-
             input = old_input
 
             if not ranking_result:
                 is_loading = False
                 self.status_box.after(
-                    0,
-                    lambda: self.render_fallback_msg(
-                        "System could not cross-reference an optimal matching file asset."
-                    ),
+                    0, lambda: self.render_fallback_msg(
+                        "No matching notes found for that query."
+                    )
                 )
                 return
 
@@ -664,18 +742,16 @@ class StudyAssistantUI(ctk.CTk):
                 )
                 is_loading = False
                 self.status_box.after(
-                    0,
-                    lambda: self.execute_typewriter_stream(
+                    0, lambda: self.execute_typewriter_stream(
                         target_text_payload, winning_file_name
-                    ),
+                    )
                 )
             else:
                 is_loading = False
                 self.status_box.after(
-                    0,
-                    lambda: self.render_fallback_msg(
-                        "System could not cross-reference an optimal matching file asset."
-                    ),
+                    0, lambda: self.render_fallback_msg(
+                        "No matching notes found for that query."
+                    )
                 )
 
         threading.Thread(target=async_search_pipeline, daemon=True).start()
@@ -683,7 +759,7 @@ class StudyAssistantUI(ctk.CTk):
     def render_fallback_msg(self, msg):
         self.status_box.configure(state="normal")
         self.status_box.delete("1.0", ctk.END)
-        self.status_box.insert("1.0", msg)
+        self.status_box._textbox.insert("1.0", msg, "body")
         self.status_box.configure(state="disabled")
         self.search_btn.configure(state="normal")
         self.search_entry.configure(state="normal")
@@ -694,51 +770,64 @@ class StudyAssistantUI(ctk.CTk):
         self.status_box.configure(state="disabled")
 
         payload_lines = target_text_payload.strip().splitlines()
+        tb = self.status_box._textbox
+
+        def clean(line):
+            """Strip paired markdown bold/italic markers, leave lone chars."""
+            s = re.sub(r"\*\*(.*?)\*\*", r"\1", line)
+            s = re.sub(r"__(.*?)__", s, s)
+            s = re.sub(r"\*(.*?)\*", r"\1", s)
+            return s
 
         def stream_line_by_line(line_idx=0):
             if line_idx < len(payload_lines):
                 self.status_box.configure(state="normal")
-                current_line = payload_lines[line_idx]
+                raw = payload_lines[line_idx]
+                stripped = raw.strip()
 
-                # Strip out residual inline raw markdown tags artifacting from standard distributions
-                clean_processed_string = re.sub(r"\*\*|__|\*", "", current_line)
+                if stripped.startswith("## "):
+                    # ── Section heading
+                    text = clean(stripped[3:]).strip()
+                    tb.insert(ctk.END, f"\n{text}\n", "h1")
 
-                if current_line.strip().startswith("##"):
-                    header_text = clean_processed_string.replace("##", "").strip()
-                    self.status_box._textbox.insert(
-                        ctk.END, f"\n{header_text}\n", "heading"
-                    )
-                elif current_line.strip().startswith("---"):
-                    self.status_box._textbox.insert(
-                        ctk.END, f"{'-'*60}\n", "divider"
-                    )
-                elif current_line.strip().startswith("-"):
-                    self.status_box._textbox.insert(
-                        ctk.END, f"  {clean_processed_string.strip()}\n", "bullet"
-                    )
+                elif stripped.startswith("# "):
+                    # ── Sub-heading
+                    text = clean(stripped[2:]).strip()
+                    tb.insert(ctk.END, f"\n{text}\n", "h2")
+
+                elif stripped == "---":
+                    # ── Thematic break — wide em-dash rule, not hyphens
+                    tb.insert(ctk.END, "\n" + "─" * 56 + "\n", "divider")
+
+                elif stripped.startswith("- "):
+                    # ── Bullet — marker and text as separate tagged runs on one line
+                    text = clean(stripped[2:]).strip()
+                    tb.insert(ctk.END, "  ◆  ", "bullet_marker")
+                    tb.insert(ctk.END, f"{text}\n", "bullet_text")
+
+                elif stripped == "":
+                    # ── Blank line — insert real breathing room
+                    tb.insert(ctk.END, "\n")
+
                 else:
-                    self.status_box._textbox.insert(
-                        ctk.END, f"{clean_processed_string}\n"
-                    )
+                    tb.insert(ctk.END, f"{clean(raw)}\n", "body")
 
                 self.status_box.see(ctk.END)
                 self.status_box.configure(state="disabled")
-                self.after(45, lambda: stream_line_by_line(line_idx + 1))
+                self.after(40, lambda: stream_line_by_line(line_idx + 1))
+
             else:
-                # Layout source tracking reference index cleanly at the absolute termination boundary
+                # ── Source footer
                 self.status_box.configure(state="normal")
-                self.status_box._textbox.insert(ctk.END, f"\n{'-'*60}\n", "divider")
-                self.status_box._textbox.insert(ctk.END, "📁 REFERENCE SOURCES UTILIZED:\n", "heading")
-                
-                if isinstance(file_sources, list):
-                    for src in file_sources:
-                        self.status_box._textbox.insert(ctk.END, f"   • {src}\n", "source")
-                else:
-                    self.status_box._textbox.insert(ctk.END, f"   • {file_sources}\n", "source")
-                    
+                tb.insert(ctk.END, "\n" + "─" * 56 + "\n", "divider")
+                tb.insert(ctk.END, "SOURCES\n", "source_label")
+
+                sources = file_sources if isinstance(file_sources, list) else [file_sources]
+                for src in sources:
+                    tb.insert(ctk.END, f"  {src.upper()}\n", "source_item")
+
                 self.status_box.see(ctk.END)
                 self.status_box.configure(state="disabled")
-
                 self.search_btn.configure(state="normal")
                 self.search_entry.configure(state="normal")
                 self.search_entry.focus()
