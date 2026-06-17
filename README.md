@@ -1,40 +1,250 @@
-# AI Study Assistant (Desktop Prototype)
+# Study Assistant
 
-A native desktop utility built in Python using CustomTkinter that lets users run keyword and semantic searches over local text files, using online Large Language Models (LLMs) to summarize and explain the retrieved notes.
+Ask questions directly from your own notes.
 
-> **Project Status:** This is an early-stage desktop prototype built as part of my learning journey in Python application development and AI orchestration. It focuses on functional architecture rather than a polished consumer deployment.
+Study Assistant is a native desktop application that searches your local note collection using semantic search and AI-powered retrieval, then generates grounded answers based on your material instead of the general internet.
 
----
-
-## Architectural Workflow
-
-
-
-The application follows a simple operational loop to process user questions:
-1. **Network Validation:** Confirms active internet status via an un-cached network socket handshake during startup.
-2. **Semantic Embedding Matrix:** Indexes local raw text files (`.txt`) using the `all-MiniLM-L6-v2` transformer model to create local vectors.
-3. **Hybrid Search Routing:** Combines frequency-based keyword matching with cosine similarity scoring to rank relevant context blocks.
-4. **Cascade API Pipeline:** Sends compiled contexts sequentially down a fallback chain of external providers (Google AI Studio, Groq, OpenRouter) until a text completion response is successfully generated.
+Built for students, self-learners, researchers, and anyone who maintains large collections of study notes.
 
 ---
 
-## Technical Reality & Limitations
+## Preview
 
-Before setting up or testing the system, please note the following operational boundaries:
-- **File Constraints:** The script currently expects a clean directory containing only standard text files (`.txt`). It does not dynamically parse complex extensions like `.pdf`, `.docx`, or `.json` notes.
-- **Hardware Dependencies:** On cold boot, the dedicated loading screen will remain active while the local sentence-transformer model initializes into memory. Systems without dedicated hardware may experience longer boot intervals.
-- **API Dependencies:** The application acts as a bridge to online LLMs. It contains no native text generation capabilities and requires valid external API keys configured in the environment.
+> Add screenshots here
+
+### Main Interface
+
+![Main Interface](SCREENSHOTS\MAIN_UI.png)
+
+### Asking a Question
+
+![Question Example](SCREENSHOTS\BIOLOGY_QUESTION.png)
+
+### Generated Answer
+
+![Generated Answer](SCREENSHOTS\ANSWER.png)
+
+### Generated Answer
+
+![Generated Answer](SCREENSHOTS\ANSWER(2).png)
+
+### Loading Screen
+![Loading Screen](SCREENSHOTS\LOADING_SCREEN.png)
+---
+### Actual Notes
+![Actual Notes](SCREENSHOTS\BIOLOGY.png)
+---
+
 
 ---
 
-## Setup & Local Testing Guide
+## Features
 
-### Prerequisites
-- Python 3.10 or higher installed on your system.
-- Valid API credentials for at least one of the supported model providers (Gemini, Groq, or OpenRouter).
+- Semantic note search using Sentence Transformers
+- Multi-file context retrieval
+- AI-generated explanations grounded in your notes
+- Supports beginner, detailed, comparison, and ELI5 explanations
+- Automatic source file tracking
+- Local-first note workflow
+- Fast desktop interface built with CustomTkinter
+- Multiple AI provider fallback system
+  - Google Gemini
+  - Groq
+  - OpenRouter
 
-### 1. Installation
-Clone this repository to your local machine and install the exact library dependencies:
+---
+
+## How It Works
+
+1. Load your notes folder.
+2. Ask a question.
+3. Study Assistant searches your notes using:
+   - Keyword matching
+   - Semantic embeddings
+4. The most relevant notes are retrieved.
+5. Relevant context is sent to the selected LLM.
+6. The answer is generated using your notes.
+7. Source files used for the answer are displayed.
+
+---
+
+## Example
+
+### Question
+
+```text
+What is the difference between CNN and RNN?
+```
+
+### Output
+
+```text
+CNNs are primarily designed to process spatial information such as images.
+
+RNNs are designed to process sequential information where previous inputs influence future outputs.
+
+Key Difference:
+- CNNs focus on spatial relationships.
+- RNNs focus on temporal relationships.
+```
+
+### Sources Used
+
+```text
+Deep Learning Notes.txt
+Neural Networks.txt
+CNN vs RNN.txt
+```
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+
 ```bash
-git clone https://github.com/AbrarH4/Study-Assistant.git
+git clone https://github.com/YOUR_USERNAME/Study-Assistant.git
+cd Study-Assistant
+```
+
+### 2. Create a Virtual Environment
+
+```bash
+python -m venv venv
+```
+
+Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+Linux / macOS:
+
+```bash
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
 pip install -r requirements.txt
+```
+
+### 4. Configure Environment Variables
+
+Create a `.env` file using `.env.example`.
+
+Example:
+
+```env
+GEMINI_API_KEY=your_key_here
+GROQ_API_KEY=your_key_here
+OPENROUTER_API_KEY=your_key_here
+```
+
+You only need one provider configured, but multiple providers enable automatic fallback.
+
+### 5. Run the Application
+
+```bash
+python main.py
+```
+
+---
+
+## Notes Format
+
+Study Assistant works with ordinary `.txt` files.
+
+Example:
+
+```text
+Neural networks are machine learning models inspired by the human brain.
+
+Convolutional Neural Networks (CNNs) are commonly used for image processing.
+
+Recurrent Neural Networks (RNNs) are designed for sequential data.
+```
+
+No special formatting is required.
+
+---
+
+## Technology Stack
+
+### Frontend
+
+- Python
+- CustomTkinter
+
+### Retrieval System
+
+- Sentence Transformers
+- all-MiniLM-L6-v2
+
+### AI Providers
+
+- Google Gemini
+- Groq
+- OpenRouter
+
+### Core Concepts
+
+- Semantic Search
+- Retrieval-Augmented Generation (RAG)
+- Embedding Similarity Search
+- Context-Based Answer Generation
+
+---
+
+## Project Goals
+
+The goal of Study Assistant is to make personal notes searchable through natural language.
+
+Instead of manually opening dozens of files, users can ask questions and receive answers generated directly from their own knowledge base.
+
+---
+
+## Roadmap
+
+### Version 1.1
+
+- PDF support
+- Better note indexing
+- Improved retrieval scoring
+- Rich source citations
+
+### Version 1.2
+
+- Conversation memory
+- Export answers
+- Note statistics and analytics
+
+### Future
+
+- Local LLM support
+- Cross-platform packaging
+- Mobile companion app
+
+---
+
+## Contributing
+
+Contributions, suggestions, bug reports, and feature requests are welcome.
+
+If you find a bug or have an idea for improvement, open an issue.
+
+---
+
+## License
+
+MIT License
+
+Feel free to use, modify, and distribute this project.
+
+---
+
+## Author
+
+Built by a student developer who wanted a better way to study from personal notes using AI.

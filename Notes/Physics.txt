@@ -1,0 +1,51 @@
+⚡ PHYSICS: LAWS OF MOTION
+1. Newton’s First Law
+
+A body remains at rest or in uniform motion unless acted upon by external force.
+
+👉 Also called law of inertia
+
+2. Newton’s Second Law
+
+Force = mass × acceleration
+F = ma
+
+More mass → more force needed
+More force → more acceleration
+3. Newton’s Third Law
+
+For every action, there is an equal and opposite reaction.
+
+Example:
+
+Walking
+Rocket launch
+4. Momentum
+
+Momentum = mass × velocity
+
+Symbol: p
+Unit: kg m/s
+5. Law of Conservation of Momentum
+
+Total momentum before = total momentum after (if no external force)
+
+6. Types of Inertia
+Inertia of rest
+Inertia of motion
+Inertia of direction
+
+Example:
+Sudden braking → passengers fall forward
+
+7. Friction
+Opposes motion
+Depends on surface roughness
+Can be useful (walking) or harmful (wear & tear)
+
+If you want, I can next:
+
+turn these into one-page revision cheat sheets
+or make diagrams + flowcharts
+or create exam question sets with answers
+or make notes for tougher chapters (like genetics, electricity, chemical bonding, etc.)
