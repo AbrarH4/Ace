@@ -23,7 +23,7 @@ Built for students, self-learners, researchers, and anyone who maintains large c
 # --------------------------------------------------------------------------------------------------
 
 ### Asking a Question
-![Question Example](SCREENSHOTS/BIOLOGY_QUESTION.png)
+### WHAT IS AN ECOSYSTEM?
 # --------------------------------------------------------------------------------------------------
 
 ### Generated Answer
