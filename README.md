@@ -12,25 +12,25 @@ Built for students, self-learners, researchers, and anyone who maintains large c
 
 ### Main Interface
 
-![Main Interface] SCREENSHOTS\MAIN_UI.png
+![Main Interface] SCREENSHOTS/MAIN_UI.png
 
 ### Asking a Question
 
-![Question Example] SCREENSHOTS\BIOLOGY_QUESTION.png
+![Question Example] SCREENSHOTS/BIOLOGY_QUESTION.png
 
 ### Generated Answer
 
-![Generated Answer] SCREENSHOTS\ANSWER.png
+![Generated Answer] SCREENSHOTS/ANSWER.png
 
 ### Generated Answer
 
-![Generated Answer 2] SCREENSHOTS\ANSWER(2).png
+![Generated Answer 2] SCREENSHOTS/ANSWER(2).png
 
 ### Loading Screen
-![Loading Screen] SCREENSHOTS\LOADING_SCREEN.png
+![Loading Screen] SCREENSHOTS/LOADING_SCREEN.png
 ---
 ### Actual Notes
-![Actual Notes] SCREENSHOTS\BIOLOGY.png
+![Actual Notes] SCREENSHOTS/BIOLOGY.png
 ---
 
 
@@ -114,7 +114,7 @@ python -m venv venv
 Windows:
 
 ```bash
-venv\Scripts\activate
+venv/Scripts/activate
 ```
 
 Linux / macOS:
