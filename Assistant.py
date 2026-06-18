@@ -1,4 +1,5 @@
 import os
+import webbrowser
 import sys
 import json
 import re
@@ -10,10 +11,11 @@ from tkinter import filedialog, messagebox
 import customtkinter as ctk
 import hashlib
 import pickle
-import pandas as pd
 import pdfplumber
 from docx import Document
 from pptx import Presentation
+from sentence_transformers.util import cos_sim
+from collections import deque
 # =====================================================================
 # PREMIUM THEME CONFIGURATION (Silicon Valley Corporate Aesthetic)
 # =====================================================================
@@ -39,6 +41,12 @@ PROVIDERS = [
         "url": "https://openrouter.ai/api/v1",
         "key": os.getenv("OPENROUTER_API_KEY"),
         "model": "openrouter/free",
+    },
+    {
+        "name": "Ollama (Local)",
+        "url": "http://localhost:11434/v1",
+        "key": "ollama",
+        "model": "llama3.2",
     },
 ]
 # =====================================================================
@@ -72,7 +80,11 @@ Notes = {}
 model = None
 model_loaded = False
 is_online = False
-
+## CHECKING FOR OLLAMA INSTALLATION ----------------------------
+def check_ollama_installed():
+    import shutil
+    return shutil.which("ollama") is not None
+# --------------------------------------------------------------------------------------------------------------------------------------------
 def get_hash(filepath):
     with open(filepath,'rb') as f:
         return hashlib.md5(f.read()).hexdigest()
@@ -82,7 +94,12 @@ def check_internet_connection(timeout=3):
         return True
     except Exception:
         return False
-
+def check_ollama_running():
+    try:
+        urllib.request.urlopen("http://localhost:11434", timeout=2)
+        return True
+    except Exception:
+        return False
 
 def bg_model_loading(ui_instance):
     """Thread worker that loads models and checks workspace safely without freezing UI."""
@@ -90,14 +107,23 @@ def bg_model_loading(ui_instance):
     is_online = check_internet_connection()
 
     if not is_online:
-        ui_instance.after(
-            0,
-            lambda: ui_instance.display_critical_network_error(
-                "CRITICAL: NO INTERNET CONNECTION DETECTED. Please check your network and restart the application."
-            ),
+        check_llama = check_ollama_running()
+        if check_llama:
+            ui_instance.after(
+            0, lambda: ui_instance.update_loading_status(
+                "Offline mode — Ollama detected, loading locally…"
+            )
         )
-        return
-
+        else:
+            if not check_llama:
+                ui_instance.after(
+                    0,
+                    lambda: ui_instance.display_critical_network_error(
+                        "No internet connection detected."
+                    ),
+                )
+                return
+ 
     ui_instance.after(
         0, lambda: ui_instance.update_loading_status("LOADING EMBEDDINGS ENGINE...")
     )
@@ -151,12 +177,20 @@ def load_folder():
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
             json.dump({"path_notes": path_notes}, f, indent=4)
     return path_notes
+from sentence_transformers import util
 
-
+def get_relevant_chunks(file_content, encoded_question, top_k=5):
+    paragraphs = [p.strip() for p in file_content.split('\n') if p.strip() and len(p.strip()) > 50]   
+    if not paragraphs:
+        return file_content[:3000]    
+    encoded_paras = model.encode(paragraphs, convert_to_tensor=True, batch_size=32)
+    scores = util.cos_sim(encoded_question, encoded_paras)[0]   
+    top_indices = scores.topk(min(top_k, len(paragraphs))).indices.tolist()
+    top_chunks = [paragraphs[i] for i in sorted(top_indices)]
+    
+    return "\n\n".join(top_chunks)
 Embedding_cache = {}
 Notes_Cache = {}
-
-
 def load_notes_from_path(folder_path):
     """Helper method to completely re-index target files into memory."""
     ALLOWED_EXTENSIONS = {
@@ -227,7 +261,19 @@ else:
     "Study Assistant needs to know where your notes live.\n\nHit ⚙ Path to point it to your notes folder — you only need to do this once."
 )
     
+#--------------------------------------------------------------------------------------------------------------------------------
+chat_history = deque(maxlen=5)
+def turn_to_history(question,answer):
+    turn = {"role":"user","content":question},{"role":"assistant","content":answer}
+    chat_history.append(turn)
+    
 
+def get_messages(system_prompt):
+    messages = [{"role": "system", "content": system_prompt}]
+    for turn in chat_history:
+        messages.extend(turn)
+    return messages
+#-----------------------------------------------------------------------------------------------------------------------------
 
 def load_stop_words():
     try:
@@ -370,10 +416,11 @@ def GenerateAnswer(question, context):
         "If relevant information exists in the context, explain it naturally instead of refusing to answer."
     )
 
+    messages = get_messages(system_prompt)
     user_content = f"QUESTION:\n{question}\n\nNOTEBOOK CONTEXT:\n{context}"
-
+    messages.append({"role": "user", "content": user_content})
     for provider in PROVIDERS:
-        if not provider["key"]:
+        if not provider["key"] and provider["name"] != "Ollama (Local)":
             print(
                 f"Skipping {provider['name']}: No API key detected in your .env file."
             )
@@ -384,13 +431,11 @@ def GenerateAnswer(question, context):
             client = OpenAI(base_url=provider["url"], api_key=provider["key"])
             response = client.chat.completions.create(
                 model=provider["model"],
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_content},
-                ],
+                messages=messages,
                 temperature=0.1,
             )
             print(f"[SUCCESS] Generated answer via {provider['name']}!")
+            turn_to_history(question, response.choices[0].message.content)
             return response.choices[0].message.content
 
         except Exception as error:
@@ -406,7 +451,8 @@ def AnswerSystem(winning_file_names, encoded_question, original_question):
         all_context = ""
         for filename in winning_file_names:
             if filename in Notes:
-                all_context += f"SOURCE: {filename}\n{Notes[filename]}\n\n"
+                relevant = get_relevant_chunks(Notes[filename],encoded_question)
+                all_context += f"SOURCE: {filename}\n{relevant}\n\n"
 
         if not all_context:
             return "No relevant context found in selected notes."
@@ -445,6 +491,8 @@ class StudyAssistantUI(ctk.CTk):
         self.loading_frame.grid_rowconfigure(3, weight=0)
         self.loading_frame.grid_rowconfigure(4, weight=0)
         self.loading_frame.grid_rowconfigure(5, weight=1)
+        self.loading_frame.grid_rowconfigure(6, weight=0)
+        self.loading_frame.grid_rowconfigure(7, weight=0)
         self.loading_frame.grid_columnconfigure(0, weight=1)
 
         # App name — large, centered, indigo-tinted white
@@ -674,10 +722,46 @@ class StudyAssistantUI(ctk.CTk):
     def display_critical_network_error(self, message):
         self.progress_bar.stop()
         self.progress_bar.configure(progress_color="#EF4444")
-        self.loading_text.configure(text=message, text_color="#EF4444")
-        self.loading_tagline.configure(
-            text="Check your network and restart.", text_color="#475569"
+        self.loading_app_name.configure(text_color="#EF4444")
+        self.loading_text.configure(
+            text="No internet connection detected.",
+            text_color="#EF4444",
         )
+
+        if check_ollama_installed():
+            # Ollama is installed but not running
+            self.loading_tagline.configure(
+                text="Ollama is installed but not running.\nOpen a terminal and run:  ollama serve",
+                text_color="#475569",
+            )
+        else:
+            # Ollama is not installed at all — show download button + size
+            self.loading_tagline.configure(
+                text="Connect to the internet for cloud AI responses,\nor install Ollama for offline assistance.",
+                text_color="#475569",
+            )
+
+            self.ollama_btn = ctk.CTkButton(
+                self.loading_frame,
+                text="⬇  Download Ollama",
+                font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+                fg_color=ACCENT_COLOR,
+                hover_color=ACCENT_HOVER,
+                text_color="#FFFFFF",
+                corner_radius=8,
+                height=38,
+                width=200,
+                command=lambda: webbrowser.open("https://ollama.com/download"),
+            )
+            self.ollama_btn.grid(row=6, column=0, pady=(24, 4))
+
+            self.ollama_size_label = ctk.CTkLabel(
+                self.loading_frame,
+                text="Ollama installer  ~150 MB  ·  Model (llama3.2)  ~2 GB",
+                font=ctk.CTkFont(family="Segoe UI", size=11),
+                text_color="#2E3A50",
+            )
+            self.ollama_size_label.grid(row=7, column=0, pady=(0, 0))
 
     def update_loading_status(self, text_status):
         self.loading_text.configure(text=text_status)
@@ -713,6 +797,7 @@ class StudyAssistantUI(ctk.CTk):
         threading.Thread(target=reindex_worker, daemon=True).start()
 
     def finish_reindex(self, path_notes):
+        chat_history.clear()
         self.sub_header.configure(text=f"• DIRECTORY: {Path(path_notes).name}")
         self.status_box.configure(state="normal")
         self.status_box.delete("1.0", ctk.END)

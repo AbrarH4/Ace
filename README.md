@@ -1,6 +1,6 @@
 # Study Assistant
 
-Ask questions directly from your own notes.
+Ask questions directly from your own notes — online or offline.
 
 Study Assistant is a native desktop application that searches your local note collection using semantic search and AI-powered retrieval, then generates grounded answers based on your material instead of the general internet.
 
@@ -13,29 +13,20 @@ Built for students, self-learners, researchers, and anyone who maintains large c
 ### Loading Screen
 ![Loading Screen](SCREENSHOTS/LOADING_SCREEN.png)
 
-# --------------------------------------------------------------------------------------------------
 ### Main Interface
 ![Main Interface](SCREENSHOTS/MAIN_UI.png)
-# --------------------------------------------------------------------------------------------------
 
 ### Actual Notes
 ![Actual Notes](SCREENSHOTS/BIOLOGY.png)
-# --------------------------------------------------------------------------------------------------
 
 ### Asking a Question
 ### WHAT IS AN ECOSYSTEM?
-# --------------------------------------------------------------------------------------------------
 
 ### Generated Answer
 ![Generated Answer](SCREENSHOTS/ANSWER.png)
-# --------------------------------------------------------------------------------------------------
 
 ### Generated Answer 2
 ![Generated Answer 2](SCREENSHOTS/ANSWERS.png)
-# --------------------------------------------------------------------------------------------------
-
-
----
 
 ---
 
@@ -47,11 +38,31 @@ Built for students, self-learners, researchers, and anyone who maintains large c
 - Supports beginner, detailed, comparison, and ELI5 explanations
 - Automatic source file tracking
 - Local-first note workflow
+- Conversation history — ask follow-up questions naturally
+- Embedding cache — fast startup after first launch
+- Supports PDF, DOCX, PPTX, TXT, and MD formats
+- Chunk-level relevance filtering for large documents
 - Fast desktop interface built with CustomTkinter
 - Multiple AI provider fallback system
   - Google Gemini
   - Groq
   - OpenRouter
+- Offline mode via Ollama — works without internet
+
+---
+
+## Online vs Offline
+
+Study Assistant works in both modes automatically.
+
+**Online mode** — uses cloud AI providers in fallback order:
+1. Google Gemini
+2. Groq
+3. OpenRouter
+
+**Offline mode** — uses Ollama running locally on your machine. No internet required. See the Ollama Setup section below.
+
+If no internet is detected and Ollama is not running, the app will guide you with clear instructions on what to do.
 
 ---
 
@@ -63,7 +74,7 @@ Built for students, self-learners, researchers, and anyone who maintains large c
    - Keyword matching
    - Semantic embeddings
 4. The most relevant notes are retrieved.
-5. Relevant context is sent to the selected LLM.
+5. Relevant chunks are filtered and sent to the selected LLM.
 6. The answer is generated using your notes.
 7. Source files used for the answer are displayed.
 
@@ -117,7 +128,7 @@ python -m venv venv
 Windows:
 
 ```bash
-venv/Scripts/activate
+venv\Scripts\activate
 ```
 
 Linux / macOS:
@@ -146,6 +157,8 @@ OPENROUTER_API_KEY=your_key_here
 
 You only need one provider configured, but multiple providers enable automatic fallback.
 
+At least one cloud provider key is recommended. If you only want offline mode, see Ollama Setup below and you can leave all keys empty.
+
 ### 5. Run the Application
 
 ```bash
@@ -154,19 +167,47 @@ python main.py
 
 ---
 
-## Notes Format
+## Ollama Setup (Offline Mode)
 
-Study Assistant works with ordinary `.txt` files.
+Ollama lets Study Assistant run fully offline using a local AI model on your machine.
 
-Example:
+### 1. Install Ollama
 
-```text
-Neural networks are machine learning models inspired by the human brain.
+Download and install from:
 
-Convolutional Neural Networks (CNNs) are commonly used for image processing.
-
-Recurrent Neural Networks (RNNs) are designed for sequential data.
 ```
+https://ollama.com/download
+```
+
+### 2. Pull the Model
+
+```bash
+ollama pull llama3.2
+```
+
+This downloads the model once (~2 GB). No re-download on subsequent launches.
+
+### 3. Start Ollama
+
+Ollama usually starts automatically on boot. If it is not running, start it manually:
+
+```bash
+ollama serve
+```
+
+Study Assistant will detect Ollama automatically on the next launch and switch to offline mode.
+
+---
+
+## Supported File Formats
+
+Study Assistant works with the following file formats out of the box:
+
+- `.txt` — plain text notes
+- `.md` — Markdown notes
+- `.pdf` — PDF documents and textbooks
+- `.docx` — Microsoft Word documents
+- `.pptx` — PowerPoint lecture slides
 
 No special formatting is required.
 
@@ -189,12 +230,14 @@ No special formatting is required.
 - Google Gemini
 - Groq
 - OpenRouter
+- Ollama (local)
 
 ### Core Concepts
 
 - Semantic Search
 - Retrieval-Augmented Generation (RAG)
 - Embedding Similarity Search
+- Chunk-Level Context Filtering
 - Context-Based Answer Generation
 
 ---
@@ -203,28 +246,27 @@ No special formatting is required.
 
 The goal of Study Assistant is to make personal notes searchable through natural language.
 
-Instead of manually opening dozens of files, users can ask questions and receive answers generated directly from their own knowledge base.
+Instead of manually opening dozens of files, users can ask questions and receive answers generated directly from their own knowledge base — with no dependency on the internet if preferred.
 
 ---
 
 ## Roadmap
 
+### Completed in v1.0
+- PDF, DOCX, PPTX support
+- Conversation history
+- Embedding cache for fast subsequent launches
+- Chunk-level relevance filtering for large documents
+- Multi-provider cloud AI fallback
+- Offline mode via Ollama
+
 ### Version 1.1
-
-- PDF support
-- Better note indexing
-- Improved retrieval scoring
-- Rich source citations
-
-### Version 1.2
-
-- Conversation memory
+- Copy answer button
+- Quiz mode
 - Export answers
 - Note statistics and analytics
 
 ### Future
-
-- Local LLM support
 - Cross-platform packaging
 - Mobile companion app
 
