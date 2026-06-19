@@ -55,12 +55,14 @@ Built for students, self-learners, researchers, and anyone who maintains large c
 
 Study Assistant works in both modes automatically.
 
-**Online mode** — uses cloud AI providers in fallback order:
-1. Google Gemini
-2. Groq
-3. OpenRouter
+Study Assistant tries providers in this order, falling back automatically if one is unavailable:
 
-**Offline mode** — uses Ollama running locally on your machine. No internet required. See the Ollama Setup section below.
+1. Ollama (local) — tried first if running, fastest and fully offline
+2. Google Gemini
+3. Groq
+4. OpenRouter
+
+This means if Ollama is running locally, it's used immediately with no network call at all. If it's not running, the app falls through to whichever cloud providers have API keys configured.
 
 If no internet is detected and Ollama is not running, the app will guide you with clear instructions on what to do.
 

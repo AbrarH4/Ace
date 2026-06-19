@@ -14,8 +14,21 @@ import pickle
 import pdfplumber
 from docx import Document
 from pptx import Presentation
-from sentence_transformers.util import cos_sim
 from collections import deque
+
+def check_internet_connection(timeout=3):
+    try:
+        urllib.request.urlopen("https://google.com", timeout=timeout)
+        return True
+    except Exception:
+        return False
+
+# Decide online/offline BEFORE importing anything from sentence_transformers/transformers
+_is_online_at_startup = check_internet_connection()
+
+if not _is_online_at_startup:
+    os.environ["HF_HUB_OFFLINE"] = "1"
+from sentence_transformers import util
 # =====================================================================
 # PREMIUM THEME CONFIGURATION (Silicon Valley Corporate Aesthetic)
 # =====================================================================
@@ -24,6 +37,12 @@ ctk.set_default_color_theme("blue")
 # =====================================================================
 load_dotenv()
 PROVIDERS = [
+    {
+        "name": "Ollama (Local)",
+        "url": "http://localhost:11434/v1",
+        "key": "ollama",
+        "model": "llama3.2",
+    },
     {
         "name": "Google AI Studio",
         "url": "https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -41,12 +60,6 @@ PROVIDERS = [
         "url": "https://openrouter.ai/api/v1",
         "key": os.getenv("OPENROUTER_API_KEY"),
         "model": "openrouter/free",
-    },
-    {
-        "name": "Ollama (Local)",
-        "url": "http://localhost:11434/v1",
-        "key": "ollama",
-        "model": "llama3.2",
     },
 ]
 # =====================================================================
@@ -84,16 +97,11 @@ is_online = False
 def check_ollama_installed():
     import shutil
     return shutil.which("ollama") is not None
+
 # --------------------------------------------------------------------------------------------------------------------------------------------
 def get_hash(filepath):
     with open(filepath,'rb') as f:
         return hashlib.md5(f.read()).hexdigest()
-def check_internet_connection(timeout=3):
-    try:
-        urllib.request.urlopen("https://google.com", timeout=timeout)
-        return True
-    except Exception:
-        return False
 def check_ollama_running():
     try:
         urllib.request.urlopen("http://localhost:11434", timeout=2)
@@ -102,41 +110,21 @@ def check_ollama_running():
         return False
 
 def bg_model_loading(ui_instance):
-    """Thread worker that loads models and checks workspace safely without freezing UI."""
     global model, model_loaded, is_online
     is_online = check_internet_connection()
 
-    if not is_online:
-        check_llama = check_ollama_running()
-        if check_llama:
-            ui_instance.after(
-            0, lambda: ui_instance.update_loading_status(
-                "Offline mode — Ollama detected, loading locally…"
-            )
-        )
-        else:
-            if not check_llama:
-                ui_instance.after(
-                    0,
-                    lambda: ui_instance.display_critical_network_error(
-                        "No internet connection detected."
-                    ),
-                )
-                return
- 
     ui_instance.after(
         0, lambda: ui_instance.update_loading_status("LOADING EMBEDDINGS ENGINE...")
     )
 
     from sentence_transformers import SentenceTransformer
-
     model = SentenceTransformer("all-MiniLM-L6-v2")
-
     if current_notes_path:
         load_notes_from_path(current_notes_path)
 
     model_loaded = True
     ui_instance.after(0, ui_instance.transition_to_main_ui)
+    
 # PDF TEXT EXTRACTION ------------------------------------------>
 def pdf_loader(file_path):
     text = ""
@@ -162,21 +150,25 @@ def presentation_loader(file_path):
                 for paragraph in shapes.text_frame.paragraphs:
                     text += paragraph.text or ''
     return text.strip()
-# LOADING NOTES FOLDER ------------------->        
+# LOADING NOTES FOLDER ------------------->  
+def check_if_path_exists():
+    with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+        settings = json.load(f)
+        if  "path_notes" in settings and settings["path_notes"]:
+                    if os.path.exists(settings["path_notes"]):
+                        return settings["path_notes"]
 def load_folder():
     if SETTINGS_FILE.exists():
-        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-            settings = json.load(f)
-            if "path_notes" in settings and settings["path_notes"]:
-                if os.path.exists(settings["path_notes"]):
-                    return settings.get("path_notes")
-                    
-            
+        if_already_path_exists = check_if_path_exists()
+        if if_already_path_exists:
+            return if_already_path_exists
     path_notes = filedialog.askdirectory(title="CHOOSE YOUR NOTES FOLDER.")
     if path_notes:
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
             json.dump({"path_notes": path_notes}, f, indent=4)
     return path_notes
+                    
+            
 from sentence_transformers import util
 
 def get_relevant_chunks(file_content, encoded_question, top_k=5):
@@ -415,15 +407,12 @@ def GenerateAnswer(question, context):
         "Do not fabricate information.\n"
         "If relevant information exists in the context, explain it naturally instead of refusing to answer."
     )
-
     messages = get_messages(system_prompt)
     user_content = f"QUESTION:\n{question}\n\nNOTEBOOK CONTEXT:\n{context}"
     messages.append({"role": "user", "content": user_content})
     for provider in PROVIDERS:
         if not provider["key"] and provider["name"] != "Ollama (Local)":
-            print(
-                f"Skipping {provider['name']}: No API key detected in your .env file."
-            )
+            print(f"Skipping {provider['name']}: No API key detected in your .env file.")
             continue
 
         try:
