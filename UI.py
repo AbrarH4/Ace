@@ -13,6 +13,7 @@ Threading model:
     main thread via self.after(0, callback) to comply with tkinter's
     single-thread restriction.
 """
+
 import re
 import customtkinter as ctk
 import sys
@@ -20,7 +21,13 @@ import threading
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox
-from loader import load_folder_path, load_notes_from_path, Notes, bg_model_loading, has_supported_files
+from loader import (
+    load_folder_path,
+    load_notes_from_path,
+    Notes,
+    bg_model_loading,
+    has_supported_files,
+)
 import json
 
 # UI for main.py
@@ -38,9 +45,10 @@ from config import (
     SETTINGS_FILE,
 )
 from quiz import get_quiz_context, test_evaluation
-from provider import GenerateQuiz, chat_history, GenerateAnswer
+from provider import GenerateQuiz, chat_history, GenerateAnswer, generateFlashcard
 from network import check_ollama_installed
 from retrieval import keyword, Ranking_System, get_relevant_chunks
+from Export_flashcard import export_flashcards
 
 model_loaded = True if bg_model_loading else False
 
@@ -112,6 +120,7 @@ class ACEUI(ctk.CTk):
         _quiz_score (int): Number of correct answers in the current session.
         _quiz_answered (bool): Whether the current question has been answered.
     """
+
     def __init__(self):
         super().__init__()
         self.title("ACE")
@@ -120,6 +129,10 @@ class ACEUI(ctk.CTk):
         self._quiz_index = 0
         self._quiz_score = 0
         self._quiz_answered = False
+        self._flashcard_data = []
+        self._flashcard_index = 0
+        self._flashcard_flipped = False
+
         self.after(0, lambda: self.wm_state("zoomed"))
         if sys.platform.startswith("linux"):
             self.attributes("-zoomed", True)
@@ -281,7 +294,21 @@ class ACEUI(ctk.CTk):
             corner_radius=8,
             command=self.open_quiz_setup,
         )
-        self.quiz_btn.grid(row=0, column=2)
+        self.quiz_btn.grid(row=0, column=2, padx=(0, 5))
+
+        self.flashcard_btn = ctk.CTkButton(
+            self.btn_frame,
+            text="🃏 Flashcards",
+            height=45,
+            width=100,
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            fg_color="#1E1B4B",
+            hover_color="#312E81",
+            text_color="#818CF8",
+            corner_radius=8,
+            command=self.open_flashcard_setup,
+        )
+        self.flashcard_btn.grid(row=0, column=3)
 
         # ── CHAT PANEL ────────────────────────────────────────────────
         self.chat_frame = ctk.CTkScrollableFrame(
@@ -623,6 +650,9 @@ class ACEUI(ctk.CTk):
             self._quiz_score = 0
             self._quiz_answered = False
             self.after(0, self._build_quiz_ui)
+            self._flashcard_data = []
+            self._flashcard_index = 0
+            self._flashcard_flipped = False
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -948,29 +978,37 @@ class ACEUI(ctk.CTk):
             self.quiz_canvas.destroy()
         self.main_canvas.grid(row=0, column=0, padx=40, pady=30, sticky="nsew")
 
-        # ── Setup dialog ──
+    def open_flashcard_setup(self):
+        if not model_loaded:
+            messagebox.showerror("Not Ready", "Model is still loading, please wait.")
+            return
+        if not Notes:
+            messagebox.showerror(
+                "No Notes", "No notes indexed. Please select a notes folder first."
+            )
+            return
+
         dialog = ctk.CTkToplevel(self)
-        dialog.title("Quiz Setup")
-        dialog.geometry("420x380")
+        dialog.title("Flashcard Setup")
+        dialog.geometry("420x300")
         dialog.resizable(False, False)
         dialog.configure(fg_color=BG_MAIN)
-        dialog.grab_set()  # modal
+        dialog.grab_set()
 
         ctk.CTkLabel(
             dialog,
-            text="Quiz Setup",
+            text="Flashcard Setup",
             font=ctk.CTkFont(family="Segoe UI", size=20, weight="bold"),
             text_color=TEXT_PRIMARY,
         ).pack(pady=(28, 4))
 
         ctk.CTkLabel(
             dialog,
-            text="Configure your quiz session",
+            text="Generate flashcards from your notes",
             font=ctk.CTkFont(family="Segoe UI", size=12),
             text_color=TEXT_DISABLED,
         ).pack(pady=(0, 24))
 
-        # Topic
         ctk.CTkLabel(
             dialog,
             text="Topic  (leave blank for all notes)",
@@ -989,17 +1027,16 @@ class ACEUI(ctk.CTk):
         )
         topic_entry.pack(fill="x", padx=32, pady=(4, 14))
 
-        # Question count
         ctk.CTkLabel(
             dialog,
-            text="Number of questions",
+            text="Number of flashcards",
             font=ctk.CTkFont(family="Segoe UI", size=12),
             text_color=TEXT_SECONDARY,
         ).pack(anchor="w", padx=32)
-        count_var = ctk.StringVar(value="5")
+        count_var = ctk.StringVar(value="10")
         count_menu = ctk.CTkOptionMenu(
             dialog,
-            values=["3", "5", "10", "15", "20"],
+            values=["5", "10", "15", "20"],
             variable=count_var,
             fg_color=BG_CARD,
             button_color=ACCENT_COLOR,
@@ -1007,49 +1044,307 @@ class ACEUI(ctk.CTk):
             text_color=TEXT_PRIMARY,
             corner_radius=8,
         )
-        count_menu.pack(fill="x", padx=32, pady=(4, 14))
+        count_menu.pack(fill="x", padx=32, pady=(4, 24))
 
-        # Question type
-        ctk.CTkLabel(
-            dialog,
-            text="Question type",
-            font=ctk.CTkFont(family="Segoe UI", size=12),
-            text_color=TEXT_SECONDARY,
-        ).pack(anchor="w", padx=32)
-        type_var = ctk.StringVar(value="mixed")
-        type_menu = ctk.CTkOptionMenu(
-            dialog,
-            values=["mixed", "mcq", "true/false"],
-            variable=type_var,
-            fg_color=BG_CARD,
-            button_color=ACCENT_COLOR,
-            button_hover_color=ACCENT_HOVER,
-            text_color=TEXT_PRIMARY,
-            corner_radius=8,
-        )
-        type_menu.pack(fill="x", padx=32, pady=(4, 24))
-
-        def start_quiz():
-            """Collect dialog values, close dialog, and launch the quiz."""
+        def start():
             topic = topic_entry.get().strip()
             count = int(count_var.get())
-            qtype = type_var.get()
             dialog.destroy()
-            self.launch_quiz(topic, count, qtype)
+            self.launch_flashcards(topic, count)
 
         ctk.CTkButton(
             dialog,
-            text="Generate Quiz  →",
+            text="Generate Flashcards  →",
             height=42,
             font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
             fg_color=ACCENT_COLOR,
             hover_color=ACCENT_HOVER,
             text_color="#FFFFFF",
             corner_radius=8,
-            command=start_quiz,
+            command=start,
         ).pack(fill="x", padx=32)
 
+    def launch_flashcards(self, topic, count):
+        self.flashcard_btn.configure(state="disabled", text="Generating…")
+
+        def worker():
+            context = get_quiz_context(topic)
+            if not context:
+                self.after(
+                    0,
+                    lambda: messagebox.showerror(
+                        "No Context", "Could not find relevant notes for that topic."
+                    ),
+                )
+                self.after(
+                    0,
+                    lambda: self.flashcard_btn.configure(
+                        state="normal", text="🃏 Flashcards"
+                    ),
+                )
+                return
+
+            cards = generateFlashcard(context, count, topic if topic else None)
+            if not cards:
+                self.after(
+                    0,
+                    lambda: messagebox.showerror(
+                        "Generation Failed", "Could not generate flashcards. Try again."
+                    ),
+                )
+                self.after(
+                    0,
+                    lambda: self.flashcard_btn.configure(
+                        state="normal", text="🃏 Flashcards"
+                    ),
+                )
+                return
+
+            self._flashcard_data = cards
+            self._flashcard_index = 0
+            self._flashcard_flipped = False
+            self.after(0, self._build_flashcard_ui)
+
+        threading.Thread(target=worker, daemon=True).start()
+
     # ── NETWORK ERROR ──────────────────────────────────────────────────
+    def _build_flashcard_ui(self):
+        self.flashcard_btn.configure(state="normal", text="🃏 Flashcards")
+        self.main_canvas.grid_forget()
+
+        self.flashcard_canvas = ctk.CTkFrame(self, fg_color="transparent")
+        self.flashcard_canvas.grid(row=0, column=0, padx=40, pady=30, sticky="nsew")
+        self.flashcard_canvas.grid_columnconfigure(0, weight=1)
+        self.flashcard_canvas.grid_rowconfigure(1, weight=1)
+
+        # Top bar
+        top_bar = ctk.CTkFrame(self.flashcard_canvas, fg_color="transparent")
+        top_bar.grid(row=0, column=0, sticky="ew", pady=(0, 20))
+        top_bar.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkButton(
+            top_bar,
+            text="← Back to Chat",
+            height=34,
+            width=130,
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            fg_color="#1F2937",
+            hover_color="#374151",
+            text_color=TEXT_SECONDARY,
+            corner_radius=8,
+            command=self._exit_flashcards,
+        ).grid(row=0, column=0, sticky="w")
+
+        self.fc_progress_label = ctk.CTkLabel(
+            top_bar,
+            text=f"Card 1 of {len(self._flashcard_data)}",
+            font=ctk.CTkFont(family="Segoe UI", size=12),
+            text_color=TEXT_DISABLED,
+            anchor="center",
+        )
+        self.fc_progress_label.grid(row=0, column=1, sticky="ew")
+
+        self.fc_count_label = ctk.CTkLabel(
+            top_bar,
+            text=f"🃏  {len(self._flashcard_data)} cards",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            text_color="#818CF8",
+            anchor="e",
+        )
+        self.fc_count_label.grid(row=0, column=2, sticky="e", padx=(0, 10))
+
+        self.fc_export_btn = ctk.CTkButton(
+            top_bar,
+            text="⬇ Export",
+            height=34,
+            width=90,
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            fg_color="#1F2937",
+            hover_color="#374151",
+            text_color=TEXT_SECONDARY,
+            corner_radius=8,
+            command=lambda: export_flashcards(self._flashcard_data),
+        )
+        self.fc_export_btn.grid(row=0, column=3, sticky="e")
+
+        # Progress bar
+        self.fc_progress_bar = ctk.CTkProgressBar(
+            self.flashcard_canvas,
+            height=3,
+            corner_radius=2,
+            fg_color="#1E2433",
+            progress_color=ACCENT_COLOR,
+        )
+        self.fc_progress_bar.grid(row=1, column=0, sticky="ew", pady=(0, 30))
+        self.fc_progress_bar.set(0)
+
+        # Card area
+        self.fc_card_frame = ctk.CTkFrame(
+            self.flashcard_canvas,
+            fg_color="#131822",
+            border_color="#1E2D45",
+            border_width=1,
+            corner_radius=20,
+        )
+        self.fc_card_frame.grid(row=2, column=0, sticky="nsew", pady=(0, 24))
+        self.fc_card_frame.grid_columnconfigure(0, weight=1)
+        self.fc_card_frame.grid_rowconfigure(1, weight=1)
+        self.flashcard_canvas.grid_rowconfigure(2, weight=1)
+        self.flashcard_canvas.grid_rowconfigure(4, weight=0)
+
+        # Side label — FRONT or BACK
+        self.fc_side_label = ctk.CTkLabel(
+            self.fc_card_frame,
+            text="FRONT",
+            font=ctk.CTkFont(family="Segoe UI", size=9, weight="bold"),
+            text_color="#2A3D5C",
+        )
+        self.fc_side_label.grid(row=0, column=0, pady=(24, 0))
+
+        # Card text
+        self.fc_text_label = ctk.CTkLabel(
+            self.fc_card_frame,
+            text="",
+            font=ctk.CTkFont(family="Segoe UI", size=20, weight="bold"),
+            text_color="#E8EEFF",
+            wraplength=700,
+            justify="center",
+            anchor="center",
+        )
+        self.fc_text_label.grid(row=1, column=0, padx=40, pady=20, sticky="nsew")
+
+        # Flip hint
+        self.fc_hint_label = ctk.CTkLabel(
+            self.fc_card_frame,
+            text="click card to flip  ↕",
+            font=ctk.CTkFont(family="Segoe UI", size=10),
+            text_color="#1E2D45",
+        )
+        self.fc_hint_label.grid(row=2, column=0, pady=(0, 20))
+
+        # Make card clickable
+        for widget in [
+            self.fc_card_frame,
+            self.fc_text_label,
+            self.fc_side_label,
+            self.fc_hint_label,
+        ]:
+            widget.bind("<Button-1>", lambda e: self._flip_card())
+            widget.configure(cursor="hand2")
+
+        # Navigation buttons
+        nav_frame = ctk.CTkFrame(self.flashcard_canvas, fg_color="transparent")
+        nav_frame.grid(row=3, column=0, pady=(0, 8))
+
+        ctk.CTkButton(
+            nav_frame,
+            text="◀  Previous",
+            height=42,
+            width=140,
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            fg_color="#1F2937",
+            hover_color="#374151",
+            text_color=TEXT_SECONDARY,
+            corner_radius=8,
+            command=self._prev_card,
+        ).grid(row=0, column=0, padx=(0, 12))
+
+        ctk.CTkButton(
+            nav_frame,
+            text="Flip  ↕",
+            height=42,
+            width=120,
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            fg_color=ACCENT_COLOR,
+            hover_color=ACCENT_HOVER,
+            text_color="#FFFFFF",
+            corner_radius=8,
+            command=self._flip_card,
+        ).grid(row=0, column=1, padx=(0, 12))
+
+        ctk.CTkButton(
+            nav_frame,
+            text="Next  ▶",
+            height=42,
+            width=140,
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            fg_color="#1F2937",
+            hover_color="#374151",
+            text_color=TEXT_SECONDARY,
+            corner_radius=8,
+            command=self._next_card,
+        ).grid(row=0, column=2)
+        self.fc_finish_btn = ctk.CTkButton(
+            self.flashcard_canvas,
+            text="✓  Done — Back to Chat",
+            height=42,
+            width=220,
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            fg_color="#0F2A1A",
+            hover_color="#16a34a",
+            text_color="#22C55E",
+            corner_radius=8,
+            command=self._exit_flashcards,
+        )
+        self.fc_finish_btn.grid(row=4, column=0, pady=(12, 0))
+        self.fc_finish_btn.grid_remove()
+
+        self._render_flashcard()
+
+    def _render_flashcard(self):
+        self._flashcard_flipped = False
+        card = self._flashcard_data[self._flashcard_index]
+        total = len(self._flashcard_data)
+
+        self.fc_progress_label.configure(
+            text=f"Card {self._flashcard_index + 1} of {total}"
+        )
+        self.fc_progress_bar.set((self._flashcard_index + 1) / total)
+        self.fc_side_label.configure(text="FRONT", text_color="#2A3D5C")
+        self.fc_text_label.configure(
+            text=card.get("front", ""),
+            text_color="#E8EEFF",
+            font=ctk.CTkFont(family="Segoe UI", size=20, weight="bold"),
+        )
+        self.fc_hint_label.configure(text="click card to flip  ↕")
+        self.fc_card_frame.configure(border_color="#1E2D45")
+
+    def _flip_card(self):
+        card = self._flashcard_data[self._flashcard_index]
+        if not self._flashcard_flipped:
+            # show back
+            self.fc_side_label.configure(text="BACK", text_color="#818CF8")
+            self.fc_text_label.configure(
+                text=card.get("back", ""),
+                text_color="#C8D0E0",
+                font=ctk.CTkFont(family="Segoe UI", size=16),
+            )
+            self.fc_card_frame.configure(border_color="#4F46E5")
+            self.fc_hint_label.configure(text="click card to flip back  ↕")
+            self._flashcard_flipped = True
+
+        else:
+            self._render_flashcard()
+
+    def _prev_card(self):
+        if self._flashcard_index > 0:
+            self._flashcard_index -= 1
+            self._render_flashcard()
+            self.fc_finish_btn.grid_remove()
+
+    def _next_card(self):
+        if self._flashcard_index < len(self._flashcard_data) - 1:
+            self._flashcard_index += 1
+            self._render_flashcard()
+        if self._flashcard_index == len(self._flashcard_data) - 1:
+            self.fc_finish_btn.grid()
+        else:
+            self.fc_finish_btn.grid_remove()
+
+    def _exit_flashcards(self):
+        if hasattr(self, "flashcard_canvas"):
+            self.flashcard_canvas.destroy()
+        self.main_canvas.grid(row=0, column=0, padx=40, pady=30, sticky="nsew")
 
     def display_critical_network_error(self, message):
         """Replace the splash progress bar with an offline error state.
@@ -1146,7 +1441,7 @@ class ACEUI(ctk.CTk):
                 "Empty Folder",
                 "The selected folder contains no supported note files.\n\n"
                 "Supported formats: .txt  .md  .pdf  .docx  .pptx\n\n"
-                "Please select another folder."
+                "Please select another folder.",
             )
 
         with open(SETTINGS_FILE, "w", encoding="utf-8") as f:

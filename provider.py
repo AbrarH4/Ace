@@ -185,7 +185,6 @@ def GenerateQuiz(context, quiz_count=5, quiz_type="mixed", difficulty=None, topi
         f"NOTEBOOK CONTEXT:\n{context}"
     )
     messages.append({"role": "user", "content": user_content})
-
     for provider in PROVIDERS:
         # Skip cloud providers without an API key
         if not provider["key"] and provider["name"] != "Ollama (Local)":
@@ -216,4 +215,71 @@ def GenerateQuiz(context, quiz_count=5, quiz_type="mixed", difficulty=None, topi
         except Exception as error:
             print(f"Warning: {provider['name']} failed: {error}")
             continue
+    return None
+
+
+def generateFlashcard(context, flashcard_count, topic=None):
+    system_prompt = (
+        "You are a flashcard generator for a study assistant app.\n"
+        "Your only job is to generate flashcards strictly from the provided notebook context.\n\n"
+        "STRICT RULES:\n"
+        "1. Use ONLY information found in the notebook context. No outside knowledge.\n"
+        "2. Return ONLY a valid JSON array. No explanation, no markdown, no preamble, no code fences.\n"
+        "3. The first character of your response must be '[' and the last must be ']'.\n"
+        "4. Every flashcard must be clearly based on the notebook context alone.\n"
+        "5. Do not repeat concepts or paraphrase the same idea twice.\n"
+        "6. Front should be a concise term, concept, or question.\n"
+        "7. Back should be a clear, concise explanation or definition.\n\n"
+        f"FLASHCARD SETTINGS:\n"
+        f"- Number of flashcards: {flashcard_count}\n"
+        f"- Topic focus: {topic if topic else 'entire notebook context'}\n\n"
+        "OUTPUT SCHEMA:\n"
+        '[{"front":"term or question","back":"definition or explanation"}]\n\n'
+        "QUALITY RULES:\n"
+        "- Front should be short — a term, concept name, or direct question.\n"
+        "- Back should be concise but complete — 1-3 sentences maximum.\n"
+        "- Cover the most important concepts from the context.\n"
+        "- Vary between definitions, explanations, and cause-effect relationships.\n\n"
+        "CRITICAL: Output raw JSON only. Any text outside the array breaks the application."
+    )
+    messages = [{"role": "system", "content": system_prompt}]
+    user_content = (
+        f"Generate exactly {flashcard_count} flashcards from the notebook context below.\n\n"
+        "Return ONLY a valid JSON array. First character must be '['.\n\n"
+        "Schema for every flashcard:\n"
+        '{"front":"concise term or question","back":"clear explanation or definition"}\n\n'
+        f"NOTEBOOK CONTEXT:\n{context}"
+    )
+    messages.append({"role": "user", "content": user_content})
+
+    for provider in PROVIDERS:
+        if not provider["key"] and provider["name"] != "Ollama (Local)":
+            print(f"Skipping {provider['name']}: No API key.")
+            continue
+        try:
+            print(f"Connecting for flashcard generation: {provider['name']}...")
+            client = OpenAI(base_url=provider["url"], api_key=provider["key"])
+            response = client.chat.completions.create(
+                model=provider["model"],
+                messages=messages,
+                temperature=0.3,
+            )
+            raw = response.choices[0].message.content
+            try:
+                flashcard_data = json.loads(raw.strip())
+            except json.JSONDecodeError:
+                start = raw.find("[")
+                end = raw.rfind("]")
+                if start != -1 and end != -1 and end > start:
+                    flashcard_data = json.loads(raw[start : end + 1])
+                else:
+                    raise
+            if not isinstance(flashcard_data, list) or len(flashcard_data) == 0:
+                raise ValueError("Invalid flashcard array.")
+            print(f"[SUCCESS] Generated flashcards via {provider['name']}!")
+            return flashcard_data
+        except Exception as error:
+            print(f"Warning: {provider['name']} failed: {error}")
+            continue
+
     return None
