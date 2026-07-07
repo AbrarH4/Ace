@@ -78,7 +78,7 @@ SETTINGS_FILE = APP_DIR / "settings.json"
 # JSON list of common English stop words used during keyword extraction
 STOP_WORDS_FILE = get_resource_path("STOP_WORDS.json")
 
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 
 # Cached sentence-transformer embeddings persisted between sessions to avoid
 # re-encoding unchanged files on every launch
