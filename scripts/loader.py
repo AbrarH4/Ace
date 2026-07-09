@@ -26,8 +26,8 @@ from tkinter import filedialog, messagebox
 import pdfplumber
 from docx import Document
 from pptx import Presentation
-from config import SETTINGS_FILE, EMBEDDINGS_CACHE_FILE, ALLOWED_EXTENSIONS
-from network import check_internet_connection
+from scripts.config import SETTINGS_FILE, EMBEDDINGS_CACHE_FILE, ALLOWED_EXTENSIONS
+from scripts.network import check_internet_connection
 
 # Shared state — imported by retrieval.py and UI.py
 Notes = {}              # Filename → plain-text content for every loaded note
