@@ -302,3 +302,10 @@ Feel free to use, modify, and distribute this project.
 ## Author
 
 Built by a student developer who wanted a better way to study from personal notes using AI.
+
+## Project layout
+
+- `scripts/` — Python application modules
+- `data/` — static data (stop words, demos)
+- `Launcher.py` / `Ace.py` — root entry shims
+
