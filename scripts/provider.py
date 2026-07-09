@@ -13,7 +13,7 @@ conversational memory without allowing the context window to grow unboundedly.
 import json
 from collections import deque
 from openai import OpenAI
-from config import PROVIDERS
+from scripts.config import PROVIDERS
 
 # Store the last 5 conversation turns (each turn is a (user_msg, assistant_msg)
 # pair). deque with maxlen automatically evicts the oldest turn when full.
