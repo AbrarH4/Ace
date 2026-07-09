@@ -21,7 +21,7 @@ import threading
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox
-from loader import (
+from scripts.loader import (
     load_folder_path,
     load_notes_from_path,
     Notes,
@@ -32,7 +32,7 @@ import json
 
 # UI for main.py
 # ── Own modules ────────────────────────────────────────
-from config import (
+from scripts.config import (
     APP_VERSION,
     BG_MAIN,
     BG_CARD,
@@ -44,11 +44,11 @@ from config import (
     TEXT_DISABLED,
     SETTINGS_FILE,
 )
-from quiz import get_quiz_context, test_evaluation
-from provider import GenerateQuiz, chat_history, GenerateAnswer, generateFlashcard
-from network import check_ollama_installed
-from retrieval import keyword, Ranking_System, get_relevant_chunks
-from Export_flashcard import export_flashcards
+from scripts.quiz import get_quiz_context, test_evaluation
+from scripts.provider import GenerateQuiz, chat_history, GenerateAnswer, generateFlashcard
+from scripts.network import check_ollama_installed
+from scripts.retrieval import keyword, Ranking_System, get_relevant_chunks
+from scipts.Export_flashcard import export_flashcards
 
 model_loaded = True if bg_model_loading else False
 
