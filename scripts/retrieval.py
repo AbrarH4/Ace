@@ -13,7 +13,7 @@ content contains an exact keyword are boosted, while the semantic score
 catches paraphrases and conceptual matches.
 """
 
-import scripts.loader
+import scripts.loader as loader
 from scripts.config import STOP_WORDS_FILE
 from sentence_transformers import util
 import json
