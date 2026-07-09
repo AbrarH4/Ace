@@ -63,13 +63,21 @@ def get_resource_path(filename):
     """
     if getattr(sys, "frozen", False):
         # PyInstaller extracts bundled files to a temp directory at runtime
-        return Path(sys._MEIPASS) / filename
+        return Path(sys._MEIPASS) / "configs" / filename
 
-    return Path(__file__).parent / filename
+    # File ab scripts folder me hai, toh ek level upar jaake configs me dekho
+    return Path(__file__).parent.parent / "configs" / filename
 
 
-# Persistent application directory in the user's APPDATA folder
-APP_DIR = Path(os.getenv("APPDATA")) / "Ace"
+# Persistent application directory (Cross-platform support)
+app_data_path = os.getenv("APPDATA")
+if app_data_path:
+    # For Windows
+    APP_DIR = Path(app_data_path) / "Ace"
+else:
+    # For Linux/macOS/WSL
+    APP_DIR = Path.home() / ".config" / "Ace"
+
 APP_DIR.mkdir(parents=True, exist_ok=True)  # Create on first run if absent
 
 # JSON file that stores user preferences (e.g. notes folder path)
