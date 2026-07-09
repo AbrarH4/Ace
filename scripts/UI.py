@@ -13,6 +13,14 @@ Threading model:
     main thread via self.after(0, callback) to comply with tkinter's
     single-thread restriction.
 """
+import sys
+from pathlib import Path as _Path
+_ROOT = _Path(__file__).resolve().parent.parent
+_SCRIPTS = _ROOT / "scripts"
+for _p in (str(_ROOT), str(_SCRIPTS)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 
 import re
 import customtkinter as ctk

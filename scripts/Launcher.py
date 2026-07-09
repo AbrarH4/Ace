@@ -7,6 +7,14 @@ then exits automatically once the main process is running.
 Built with plain tkinter (not CustomTkinter) so it loads instantly without
 any third-party dependencies.
 """
+import sys
+from pathlib import Path as _Path
+_ROOT = _Path(__file__).resolve().parent.parent
+_SCRIPTS = _ROOT / "scripts"
+for _p in (str(_ROOT), str(_SCRIPTS)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 
 import tkinter as tk
 import threading

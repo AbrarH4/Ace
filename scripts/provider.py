@@ -8,6 +8,14 @@ config.PROVIDERS, the first to succeed short-circuits the loop.
 Chat context is maintained in a fixed-length deque to give the LLM
 conversational memory without allowing the context window to grow unboundedly.
 """
+import sys
+from pathlib import Path as _Path
+_ROOT = _Path(__file__).resolve().parent.parent
+_SCRIPTS = _ROOT / "scripts"
+for _p in (str(_ROOT), str(_SCRIPTS)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 
 # providers.py
 import json

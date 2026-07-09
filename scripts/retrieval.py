@@ -12,6 +12,14 @@ The two-stage ranking (lexical + semantic) ensures files whose filename or
 content contains an exact keyword are boosted, while the semantic score
 catches paraphrases and conceptual matches.
 """
+import sys
+from pathlib import Path as _Path
+_ROOT = _Path(__file__).resolve().parent.parent
+_SCRIPTS = _ROOT / "scripts"
+for _p in (str(_ROOT), str(_SCRIPTS)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 
 import loader
 from config import STOP_WORDS_FILE

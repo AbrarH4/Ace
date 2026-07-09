@@ -9,6 +9,14 @@ generator (provider.py). It handles two responsibilities:
 2. Answer evaluation — test_evaluation() compares the user's selected answer
    against the correct answer and packages the result for the quiz UI.
 """
+import sys
+from pathlib import Path as _Path
+_ROOT = _Path(__file__).resolve().parent.parent
+_SCRIPTS = _ROOT / "scripts"
+for _p in (str(_ROOT), str(_SCRIPTS)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 
 # quiz.py
 import loader
