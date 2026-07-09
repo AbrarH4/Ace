@@ -65,7 +65,18 @@ def get_resource_path(filename):
         # PyInstaller extracts bundled files to a temp directory at runtime
         return Path(sys._MEIPASS) / filename
 
-    return Path(__file__).parent / filename
+    # Prefer data/ next to the project root; fall back for legacy layouts
+    scripts_dir = Path(__file__).resolve().parent
+    root_dir = scripts_dir.parent
+    candidates = [
+        root_dir / "data" / filename,
+        scripts_dir / filename,
+        root_dir / filename,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
 
 
 # Persistent application directory in the user's APPDATA folder
