@@ -11,8 +11,8 @@ generator (provider.py). It handles two responsibilities:
 """
 
 # quiz.py
-import scripts.loader
-import scripts.retrieval
+import scripts.loader as loader
+import scripts.retrieval as retrieval
 
 
 def get_quiz_context(topic=""):
