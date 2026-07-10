@@ -302,3 +302,5 @@ Feel free to use, modify, and distribute this project.
 ## Author
 
 Built by a student developer who wanted a better way to study from personal notes using AI.
+
+Structure: [docs/folder-structure.md](docs/folder-structure.md).
