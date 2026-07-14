@@ -178,7 +178,7 @@ At least one cloud provider key is recommended. If you only want offline mode, s
 ### 5. Run the Application
 
 ```bash
-python main.py
+python Ace.py
 ```
 
 ---
