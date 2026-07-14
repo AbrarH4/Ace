@@ -198,8 +198,9 @@ def bg_model_loading(ui_instance):
     model = SentenceTransformer("all-MiniLM-L6-v2")
 
     # Load the folder path and index notes (re-encodes only changed files)
-    if load_folder_path():
-        load_notes_from_path(load_folder_path())
+    notes_folder = load_folder_path()
+    if notes_folder:
+        load_notes_from_path(notes_folder)
 
     model_loaded = True
 
