@@ -21,3 +21,4 @@ dist/
 *.zip
 *.pdf
 
+.pytest_cache/
