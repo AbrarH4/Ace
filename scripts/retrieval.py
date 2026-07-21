@@ -64,7 +64,9 @@ def keyword(question: str = None) -> list:
         question = input()
     words = question.split()
     keywords = [
-        word.strip("?!.,").lower() for word in words if word.lower() not in Stop_words
+        word.strip("?!.,").lower()
+        for word in words
+        if word.strip("?!.,").lower() not in Stop_words
     ]
     return keywords
 
@@ -179,7 +181,7 @@ def Ranking_System(keyword, question):
 
     if not Final_Scores:
         # Return a consistent tuple so the caller's unpacking never crashes
-        return "error.txt", encoded_question
+        return [], encoded_question
 
     # Select the top-3 notes sorted by descending combined score
     best_note = [

@@ -22,10 +22,14 @@ def test_keyword_strips_punctuation_and_lowercases(monkeypatch):
     assert result == ["photosynthesis", "mitochondria"]
 
 
-def test_keyword_does_not_filter_stopwords_with_trailing_punctuation(monkeypatch):
+def test_keyword_filters_stopwords_with_trailing_punctuation(monkeypatch):
+    # Regression test: the stop-word check now runs on the word after
+    # punctuation is stripped, so "the," (with a trailing comma) correctly
+    # matches the stop word "the" and gets filtered out.
     monkeypatch.setattr(retrieval, "Stop_words", {"the"})
     result = retrieval.keyword("the, cell")
-    assert "the" in result
+    assert "the" not in result
+    assert result == ["cell"]
 
 
 # --- get_relevant_chunks() -------------------------------------------------
@@ -121,7 +125,11 @@ def test_ranking_system_excludes_error_txt_from_results(monkeypatch):
     assert "real.txt" in best_notes
 
 
-def test_ranking_system_returns_string_not_list_when_only_error_txt_is_loaded(monkeypatch):
+def test_ranking_system_returns_empty_list_when_only_error_txt_is_loaded(monkeypatch):
+    # Regression test: when every note is excluded (here, only the reserved
+    # "error.txt" placeholder remains), Final_Scores ends up empty and
+    # Ranking_System now returns an empty list rather than the bare string
+    # "error.txt"; matching the tuple shape callers rely on.
     loader.Notes["error.txt"] = "placeholder"
     fake_model = MagicMock()
     fake_model.encode.return_value = "encoded"
@@ -129,8 +137,7 @@ def test_ranking_system_returns_string_not_list_when_only_error_txt_is_loaded(mo
 
     result = retrieval.Ranking_System(["anything"], "question")
 
-    assert result == ("error.txt", "encoded")
-    assert isinstance(result[0], str)  # documents the inconsistent return type
+    assert result == ([], "encoded")
 
 
 def test_ranking_system_shows_error_dialog_and_returns_none_when_no_keywords(monkeypatch):
