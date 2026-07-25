@@ -1,3 +1,4 @@
+// SIDEBAR
 import {
   Home,
   MessageSquare,

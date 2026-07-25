@@ -176,7 +176,7 @@ def Ranking_System(keyword, question):
 
     if not Final_Scores:
         # Return a consistent tuple so the caller's unpacking never crashes
-        return "error.txt", encoded_question
+        return ["error.txt"], encoded_question
 
     # Select the top-3 notes sorted by descending combined score
     best_note = [

@@ -12,12 +12,12 @@ load_dotenv()
 # so offline / local inference is preferred when the daemon is running.
 # Cloud providers are skipped automatically if their key is missing.
 PROVIDERS = [
-    {
-        "name": "Ollama (Local)",
-        "url": "http://localhost:11434/v1",
-        "key": "ollama",
-        "model": "llama3.2",
-    },
+    # {
+    #     "name": "Ollama (Local)",
+    #     "url": "http://localhost:11434/v1",
+    #     "key": "ollama",
+    #     "model": "llama3.2",
+    # },
     {
         "name": "Google AI Studio",
         "url": "https://generativelanguage.googleapis.com/v1beta/openai/",

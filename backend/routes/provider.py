@@ -106,7 +106,7 @@ def GenerateAnswer(question, context):
     # Try each configured provider in priority order
     for provider in PROVIDERS:
         # Skip cloud providers that have no API key configured
-        if not provider["key"] and provider["name"] != "Ollama (Local)":
+        if not provider["key"]:
             print(f"Skipping {provider['name']}: No API key.")
             continue
         try:

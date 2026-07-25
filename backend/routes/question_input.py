@@ -14,9 +14,15 @@ async def receive_question(text: str = Body(..., embed=True)):
         model_loaded = True
     keywords = keyword(text)
     bestnote,_ = Ranking_System(keywords, text)
-    contents = []   
-    for top_note in bestnote:
-        content = loader.Notes[top_note]
-        contents.append(content)
-    response =  GenerateAnswer(text, contents)
-    print(response)
+    contents = [] 
+    try:  
+        for top_note in bestnote:
+            content = loader.Notes[top_note]
+            contents.append(content)
+        context = "\n\n".join(contents)
+        response = GenerateAnswer(text, context)
+    except Exception as e:
+        print(type(bestnote))
+        response = ""
+    return {"answer": response}
+    
