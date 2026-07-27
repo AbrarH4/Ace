@@ -22,7 +22,7 @@ async def receive_question(text: str = Body(..., embed=True)):
         context = "\n\n".join(contents)
         response = GenerateAnswer(text, context)
     except Exception as e:
-        print(type(bestnote))
+        print(e)
         response = ""
-    return {"answer": response}
+    return {"response": response}
     

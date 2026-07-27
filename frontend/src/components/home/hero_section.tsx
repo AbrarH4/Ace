@@ -1,7 +1,7 @@
 import React from "react";
 import { Sparkles, Bot, CornerDownLeft, Send } from "lucide-react";
 import { Link } from "react-router-dom";
-import { ROUTES } from "../config/ROUTES";
+import { ROUTES } from "../../config/ROUTES";
 function Hero_Section() {
   return (
     <section className="layout">

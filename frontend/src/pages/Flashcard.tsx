@@ -6,7 +6,7 @@ import FlashcardControls from "../components/flashcards/FlashcardControls";
 function Flashcards() {
   return (
     <div className="chat-layout">
-      <Sidebar />
+      <Sidebar uploadedNotes={[]} />
 
       <main className="chat-main">
         <FlashcardHeader />

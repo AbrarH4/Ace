@@ -6,7 +6,7 @@ import QuizControls from "../components/quiz/QuizControls";
 function Quiz() {
   return (
     <div className="chat-layout">
-      <Sidebar />
+      <Sidebar uploadedNotes={[]} />
 
       <main className="chat-main">
         <QuizHeader />

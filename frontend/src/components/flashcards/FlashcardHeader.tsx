@@ -1,14 +1,14 @@
-import { FileText, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 function FlashcardHeader() {
   return (
     <header className="flashcard-header">
       <div className="header-left">
-        <h2>Flashcard Generator</h2>
+        <h2>Flashcards</h2>
 
         <div className="current-file">
-          <FileText size={16} />
-          <span>No document selected</span>
+          <Sparkles size={16} />
+          <span>Study smarter with ACE</span>
         </div>
       </div>
 

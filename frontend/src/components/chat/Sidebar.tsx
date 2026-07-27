@@ -1,4 +1,3 @@
-// SIDEBAR
 import {
   Home,
   MessageSquare,
@@ -6,22 +5,33 @@ import {
   Target,
   Settings,
   GraduationCap,
+  FileText,
 } from "lucide-react";
+
 import { Link, useLocation } from "react-router-dom";
 import { ROUTES } from "../../config/ROUTES";
-function Sidebar() {
+
+type SidebarProps = {
+  uploadedNotes: string[];
+};
+
+function Sidebar({ uploadedNotes }: SidebarProps) {
   const location = useLocation();
 
   return (
     <aside className="chat-sidebar">
-      {/* Logo */}
+      {/* ================================= */}
+      {/* LOGO */}
+      {/* ================================= */}
 
       <div className="sidebar-logo">
         <GraduationCap size={32} />
         <h2>ACE</h2>
       </div>
 
-      {/* Navigation */}
+      {/* ================================= */}
+      {/* MAIN NAVIGATION */}
+      {/* ================================= */}
 
       <nav className="sidebar-nav">
         <Link
@@ -71,11 +81,46 @@ function Sidebar() {
         </Link>
       </nav>
 
-      {/* Bottom */}
+      {/* ================================= */}
+      {/* UPLOADED NOTES */}
+      {/* ================================= */}
+
+      <div className="sidebar-notes">
+        <div className="sidebar-section-title">
+          <span>Your Notes</span>
+        </div>
+
+        {uploadedNotes.length === 0 ? (
+          <div className="no-notes">
+            <FileText size={18} />
+
+            <span>No notes uploaded</span>
+          </div>
+        ) : (
+          <div className="notes-list">
+            {uploadedNotes.map((note, index) => (
+              <div
+                className="sidebar-note"
+                key={`${note}-${index}`}
+                title={note}
+              >
+                <FileText size={16} />
+
+                <span>{note}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ================================= */}
+      {/* BOTTOM SETTINGS */}
+      {/* ================================= */}
 
       <div className="sidebar-bottom">
         <button className="sidebar-link">
           <Settings size={20} />
+
           <span>Settings</span>
         </button>
       </div>

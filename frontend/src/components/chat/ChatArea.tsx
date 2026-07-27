@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Brain, UploadCloud } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
@@ -10,31 +11,52 @@ type ChatAreaProps = {
   messages: Message[];
   isLoading: boolean;
   onUploadClick: () => void;
+  isNotesUploaded: boolean;
 };
 
-function ChatArea({ messages, isLoading, onUploadClick }: ChatAreaProps) {
+function ChatArea({
+  messages,
+  isLoading,
+  onUploadClick,
+  isNotesUploaded,
+}: ChatAreaProps) {
+  // This points to an invisible element at the bottom of the chat
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Whenever messages or loading state changes,
+  // scroll to the bottom of the chat
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, isLoading]);
+
   // Empty state
   if (messages.length === 0) {
     return (
       <section className="chat-area">
-        <div className="chat-empty">
-          <div className="empty-icon">
-            <Brain size={44} />
+        {!isNotesUploaded ? (
+          <div className="chat-empty">
+            <div className="empty-icon">
+              <Brain size={44} />
+            </div>
+
+            <h2>Welcome to ACE</h2>
+
+            <p>
+              Upload your notes and start asking questions.
+              <br />
+              ACE will answer using your own study material.
+            </p>
+
+            <button className="empty-upload-btn" onClick={onUploadClick}>
+              <UploadCloud size={18} />
+              Upload Your First Document
+            </button>
           </div>
-
-          <h2>Welcome to ACE</h2>
-
-          <p>
-            Upload your notes and start asking questions.
-            <br />
-            ACE will answer using your own study material.
-          </p>
-
-          <button className="empty-upload-btn" onClick={onUploadClick}>
-            <UploadCloud size={18} />
-            Upload Your First Document
-          </button>
-        </div>
+        ) : (
+          ""
+        )}
       </section>
     );
   }
@@ -63,6 +85,7 @@ function ChatArea({ messages, isLoading, onUploadClick }: ChatAreaProps) {
             </div>
           </div>
         ))}
+
         {isLoading && (
           <div className="message-row assistant-row">
             <div className="message-bubble assistant-bubble loading-bubble">
@@ -76,6 +99,9 @@ function ChatArea({ messages, isLoading, onUploadClick }: ChatAreaProps) {
             </div>
           </div>
         )}
+
+        {/* Invisible element at the very bottom */}
+        <div ref={bottomRef} />
       </div>
     </section>
   );
