@@ -1,6 +1,13 @@
 import { Layers3 } from "lucide-react";
-
-function FlashcardViewer() {
+type FlashCard = {
+  question: string;
+  answer: string;
+};
+type FlashCardsViewerProps = {
+  flashcard: FlashCard;
+  isFlipped: boolean;
+};
+function FlashcardViewer({ flashcard, isFlipped }: FlashCardsViewerProps) {
   return (
     <section className="flashcard-viewer">
       <div className="flashcard">
@@ -9,11 +16,8 @@ function FlashcardViewer() {
 
           <span>Question</span>
         </div>
-
         <div className="flashcard-content">
-          <h2>What is Binary Search?</h2>
-
-          <p>Click Flip Card to reveal the answer.</p>
+          {isFlipped ? flashcard.answer : flashcard.question}
         </div>
       </div>
     </section>

@@ -1,6 +1,8 @@
 import { ChevronLeft, ChevronRight, RefreshCcw, Download } from "lucide-react";
-
-function FlashcardControls() {
+type flashcardControlsProps = {
+  onFlip: () => void;
+};
+function FlashcardControls({ onFlip }: flashcardControlsProps) {
   return (
     <section className="flashcard-controls">
       <div className="card-navigation">
@@ -18,7 +20,7 @@ function FlashcardControls() {
       </div>
 
       <div className="card-actions">
-        <button>
+        <button onClick={onFlip}>
           <RefreshCcw size={18} />
           Flip Card
         </button>

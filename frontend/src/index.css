@@ -2700,3 +2700,50 @@ body {
 
   color: #c7d2fe;
 }
+.flashcard-empty {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+
+  padding: 2rem;
+}
+
+.flashcard-empty-icon {
+  width: 90px;
+  height: 90px;
+
+  border-radius: 22px;
+
+  background: rgba(79, 70, 229, 0.12);
+
+  color: #6366f1;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin-bottom: 2rem;
+}
+
+.flashcard-empty h2 {
+  color: white;
+
+  font-size: 2rem;
+
+  margin-bottom: 1rem;
+}
+
+.flashcard-empty p {
+  max-width: 520px;
+
+  color: #94a3b8;
+
+  line-height: 1.8;
+
+  margin-bottom: 2rem;
+}
