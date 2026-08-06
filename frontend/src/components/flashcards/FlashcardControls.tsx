@@ -1,19 +1,31 @@
 import { ChevronLeft, ChevronRight, RefreshCcw, Download } from "lucide-react";
 type flashcardControlsProps = {
   onFlip: () => void;
+  onNext: () => void;
+  onPrevious: () => void;
+  currentIndex: number;
+  totalCards: number;
 };
-function FlashcardControls({ onFlip }: flashcardControlsProps) {
+function FlashcardControls({
+  onFlip,
+  onNext,
+  onPrevious,
+  currentIndex,
+  totalCards,
+}: flashcardControlsProps) {
   return (
     <section className="flashcard-controls">
       <div className="card-navigation">
-        <button>
+        <button onClick={onPrevious}>
           <ChevronLeft size={18} />
           Previous
         </button>
 
-        <span>Card 1 of 20</span>
+        <span>
+          Card {currentIndex + 1} of {totalCards}
+        </span>
 
-        <button>
+        <button onClick={onNext}>
           Next
           <ChevronRight size={18} />
         </button>

@@ -9,24 +9,54 @@ type Flashcards = {
   answer: string;
 };
 function Flashcards() {
-  const [flashcard, setFlashcard] = useState<Flashcards | null>(null);
+  const [flashcard, setFlashcard] = useState<Flashcards[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [currentIndex, setIndex] = useState<number>(0);
   const handleGenerate = () => {
     setIsGenerating(true);
 
     setTimeout(() => {
-      setFlashcard({
-        question: "What is the main purpose of the uploaded notes?",
-        answer: "To summarize key concepts for revision.",
-      });
+      setFlashcard([
+        {
+          question: "What is the main purpose of the uploaded notes?",
+          answer: "To summarize key concepts for revision.",
+        },
+        {
+          question: "What notes?",
+          answer: "To summarize key concepts for revision.",
+        },
+        {
+          question: "notes?",
+          answer: "To summarize key concepts for revision.",
+        },
+      ]);
       setIsGenerating(false);
     }, 2000);
   };
   const handleFlip = () => {
     setIsFlipped((previous) => !previous);
   };
+  const currentFlashcard = flashcard[currentIndex];
+  const handleNext = () => {
+    setIsFlipped(false);
+    setIndex((previous) => {
+      if (previous < flashcard.length - 1) {
+        return previous + 1;
+      }
+      return 0;
+    });
+  };
+  const handlePrevious = () => {
+    setIsFlipped(false);
+    setIndex((previous) => {
+      if (previous > 0) {
+        return previous - 1;
+      }
 
+      return previous;
+    });
+  };
   return (
     <div className="chat-layout">
       <Sidebar uploadedNotes={[]} />
@@ -37,7 +67,7 @@ function Flashcards() {
           onGenerate={handleGenerate}
         />
 
-        {flashcard === null ? (
+        {flashcard.length === 0 ? (
           <div className="flashcard-empty">
             <div className="flashcard-empty-icon">
               <Layers3 size={46} />
@@ -64,8 +94,17 @@ function Flashcards() {
           </div>
         ) : (
           <>
-            <FlashcardViewer isFlipped={isFlipped} flashcard={flashcard} />
-            <FlashcardControls onFlip={handleFlip} />
+            <FlashcardViewer
+              isFlipped={isFlipped}
+              flashcard={currentFlashcard}
+            />
+            <FlashcardControls
+              onFlip={handleFlip}
+              onNext={handleNext}
+              onPrevious={handlePrevious}
+              currentIndex={currentIndex}
+              totalCards={flashcard.length}
+            />
           </>
         )}
       </main>
