@@ -9,6 +9,7 @@ function Navigation_Bar() {
         <Link to={ROUTES.CHAT}> Workspace </Link>
         <Link to={ROUTES.FLASHCARDS}> Flashcards </Link>
         <Link to={ROUTES.QUIZ}> Quiz </Link>
+        <Link to="/register">Register</Link>
       </div>
 
       <div className="nav-settings">

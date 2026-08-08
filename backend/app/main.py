@@ -2,9 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes.notes import router
 from routes.question_input import router_question
+from routes.auth import router_auth
 app = FastAPI()
 app.include_router(router)
 app.include_router(router_question)
+app.include_router(router_auth, prefix="/auth")
 origins = [
     "http://localhost:5173",
 ]

@@ -4,13 +4,22 @@ from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 from sqlalchemy import DateTime
 
+from pathlib import Path
 
-engine = create_engine("sqlite:///ace.db")
+BASE_DIR = Path(__file__).resolve().parent
+DATABASE_URL = f"sqlite:///{BASE_DIR / 'ace.db'}"
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
 class Base(DeclarativeBase):
     pass
+def get_db():
+    db = SessionLocal()
 
+    try:
+        yield db
+    finally:
+        db.close()
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
