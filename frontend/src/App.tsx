@@ -5,6 +5,7 @@ import ChatWithNotes from "./pages/chat_with_notes";
 import Flashcards from "./pages/Flashcard";
 import Quiz from "./pages/Quiz";
 import Register from "./pages/Register";
+import Login from "./pages/login";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/flashcards" element={<Flashcards />} />
         <Route path="/quiz" element={<Quiz />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );

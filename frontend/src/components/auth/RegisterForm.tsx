@@ -3,7 +3,7 @@ import { useState, type SubmitEvent } from "react";
 import "./RegisterForm.css";
 
 function RegisterForm() {
-  const [firstName, setFirstName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,20 +26,24 @@ function RegisterForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          firstName,
+          fullName,
           email,
           password,
         }),
       });
 
       if (!response.ok) {
-        showMessage("ERROR: REGISTRATION FAILED!");
+        const data = await response.json();
+        setMessage(data.detail);
         return;
       }
 
-      showMessage("ACCOUNT CREATED SUCCESFULLY!");
+      showMessage("✓  Account created successfully! 🎉");
+      setFullName("");
+      setEmail("");
+      setPassword("");
     } catch (error) {
-      showMessage("ACCOUNT CREATION FAILED DUE TO INTERNAL ERROR!");
+      showMessage("✕  Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -52,9 +56,9 @@ function RegisterForm() {
 
       <input
         type="text"
-        placeholder="First name"
-        value={firstName}
-        onChange={(event) => setFirstName(event.target.value)}
+        placeholder="Full name"
+        value={fullName}
+        onChange={(event) => setFullName(event.target.value)}
       />
 
       <input
