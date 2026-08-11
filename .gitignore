@@ -1,24 +1,26 @@
+# Environment / secrets
 .env
-
 settings.json
 
+# Python
 __pycache__/
-
 *.pyc
-
-.vscode/
-
-.idea/
-
 venv/
-
 .venv/
 
-build/
+# Node / Vite
+node_modules/
 dist/
-*.spec
 
+# IDE
+.vscode/
+.idea/
+
+# Build / generated files
+build/
+*.spec
 *.zip
 *.pdf
 
-.pytest_cache/
+# Databases
+*.db

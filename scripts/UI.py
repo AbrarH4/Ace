@@ -21,7 +21,7 @@ import threading
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox
-from scripts.loader import (
+from backend.routes.loader import (
     load_folder_path,
     load_notes_from_path,
     Notes,
@@ -32,7 +32,7 @@ import json
 
 # UI for main.py
 # ── Own modules ────────────────────────────────────────
-from scripts.config import (
+from backend.app.config import (
     APP_VERSION,
     BG_MAIN,
     BG_CARD,
@@ -45,9 +45,9 @@ from scripts.config import (
     SETTINGS_FILE,
 )
 from scripts.quiz import get_quiz_context, test_evaluation
-from scripts.provider import GenerateQuiz, chat_history, GenerateAnswer, generateFlashcard
+from backend.routes.provider import GenerateQuiz, chat_history, GenerateAnswer, generateFlashcard
 from scripts.network import check_ollama_installed
-from scripts.retrieval import keyword, Ranking_System, get_relevant_chunks
+from backend.routes.retrieval import keyword, Ranking_System, get_relevant_chunks
 from Export_flashcard import export_flashcards
 
 model_loaded = True if bg_model_loading else False

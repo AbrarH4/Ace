@@ -1,13 +1,55 @@
 import { useState, type SubmitEvent } from "react";
-// @ts-expect-error - CSS imports are handled by the bundler in this project
+// @ts-expect-error - CSS imports are handled by the bundler
 import "./LoginForm.css";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const handleSubmit = (event: SubmitEvent) => {
+  const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
+
+    setIsSubmitting(true);
+
+    const showMessage = (text: string) => {
+      setMessage(text);
+
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    };
+
+    try {
+      const response = await fetch("http://localhost:8000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showMessage(data.detail);
+        return;
+      }
+
+      showMessage("✓  Login successful! 🎉");
+
+      setEmail("");
+      setPassword("");
+    } catch (error) {
+      showMessage("✕  Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -30,7 +72,11 @@ function LoginForm() {
         onChange={(event) => setPassword(event.target.value)}
       />
 
-      <button type="submit">Log In</button>
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Logging In..." : "Log In"}
+      </button>
+
+      {message && <div className="form-message">{message}</div>}
     </form>
   );
 }

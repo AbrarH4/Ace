@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 import hashlib
 from pwdlib import PasswordHash
 from database import User, get_db
 from sqlalchemy import select
-
+from auth.security import create_access_token
 
 router_auth = APIRouter()
 
@@ -12,6 +12,10 @@ password_hash = PasswordHash.recommended()
 
 class RegisterRequest(BaseModel):
     fullName: str
+    email: str
+    password: str
+    
+class LoginRequest(BaseModel):
     email: str
     password: str
 
@@ -32,3 +36,36 @@ def register(data: RegisterRequest, db=Depends(get_db)):
     db.add(new_user)
     db.commit()
     
+    
+@router_auth.post("/login")
+def login(data: LoginRequest, db=Depends(get_db), response: Response = None):
+    existing_user = db.scalar(
+    select(User).where(User.email == data.email)
+)
+
+    if not existing_user:
+        raise HTTPException(
+            status_code=401,
+            detail="⚠ Email doesn't exist."
+        )
+
+    if not password_hash.verify(
+        data.password,
+        existing_user.password_hash
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="⚠ Password incorrect."
+        )
+
+    jwt_token = create_access_token(existing_user.id)
+    response.set_cookie(
+    key="access_token",
+    value=jwt_token,
+    httponly= True
+)
+    return {
+        "token": jwt_token,
+        "type": "Bearer",
+        
+    }
