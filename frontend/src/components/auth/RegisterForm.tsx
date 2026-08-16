@@ -1,9 +1,11 @@
 import { useState, type SubmitEvent } from "react";
 // @ts-expect-error - CSS imports are handled by the bundler
 import "./RegisterForm.css";
+import { useNavigate } from "react-router-dom";
 
 function RegisterForm() {
   const [fullName, setFullName] = useState("");
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,6 +44,7 @@ function RegisterForm() {
       setFullName("");
       setEmail("");
       setPassword("");
+      navigate("/login");
     } catch (error) {
       showMessage("✕  Something went wrong. Please try again.");
     } finally {

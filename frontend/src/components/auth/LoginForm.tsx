@@ -1,12 +1,14 @@
 import { useState, type SubmitEvent } from "react";
 // @ts-expect-error - CSS imports are handled by the bundler
 import "./LoginForm.css";
+import { useNavigate } from "react-router-dom";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -42,6 +44,9 @@ function LoginForm() {
       }
 
       showMessage("✓  Login successful! 🎉");
+      setTimeout(() => {
+        (navigate("/chat"), 2000);
+      });
 
       setEmail("");
       setPassword("");

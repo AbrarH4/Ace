@@ -18,4 +18,4 @@ def verify_access_token(token):
     except jwt.InvalidTokenError as esc:
         raise ValueError("Invalid token") from esc
 
-    return verification['sub']
+    return verification['sub']  

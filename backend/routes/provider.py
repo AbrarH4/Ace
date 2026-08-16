@@ -265,6 +265,12 @@ def generateFlashcard(context, flashcard_count, topic=None):
                 temperature=0.3,
             )
             raw = response.choices[0].message.content
+            print("RESPONSE:")
+            print("\n")
+            print("\n")
+            print("\n")
+            print("\n")
+            print(raw)
             try:
                 flashcard_data = json.loads(raw.strip())
             except json.JSONDecodeError:

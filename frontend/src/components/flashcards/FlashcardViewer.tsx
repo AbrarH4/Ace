@@ -1,7 +1,7 @@
 import { Layers3 } from "lucide-react";
 type FlashCard = {
-  question: string;
-  answer: string;
+  front: string;
+  back: string;
 };
 type FlashCardsViewerProps = {
   flashcard: FlashCard;
@@ -17,7 +17,7 @@ function FlashcardViewer({ flashcard, isFlipped }: FlashCardsViewerProps) {
           <span>Question</span>
         </div>
         <div className="flashcard-content">
-          {isFlipped ? flashcard.answer : flashcard.question}
+          {isFlipped ? flashcard.back : flashcard.front}
         </div>
       </div>
     </section>

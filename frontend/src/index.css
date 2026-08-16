@@ -2711,8 +2711,9 @@ body {
   text-align: center;
 
   padding: 2rem;
+  box-sizing: border-box;
+  width: 100%;
 }
-
 .flashcard-empty-icon {
   width: 90px;
   height: 90px;
@@ -2740,10 +2741,85 @@ body {
 
 .flashcard-empty p {
   max-width: 520px;
-
   color: #94a3b8;
-
   line-height: 1.8;
+  margin-bottom: 0;
+}
+.generation-settings {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
 
-  margin-bottom: 2rem;
+  width: min(600px, 100%);
+  margin: 26px auto 24px;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  text-align: left;
+}
+
+.setting-group:first-child {
+  flex: 1;
+}
+
+.setting-group:last-child {
+  width: 150px;
+}
+
+.setting-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.setting-group input,
+.setting-group select {
+  height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 0 13px;
+
+  border: 1px solid #334155;
+  border-radius: 10px;
+
+  background: #1e293b;
+  color: #f8fafc;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+}
+
+.setting-group input {
+  min-width: 0;
+}
+
+.setting-group input::placeholder {
+  color: #64748b;
+}
+
+.setting-group input:focus,
+.setting-group select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.setting-group select {
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .generation-settings {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .setting-group:last-child {
+    width: 100%;
+  }
 }

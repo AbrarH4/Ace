@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, true
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, UniqueConstraint
 
 from pathlib import Path
 
@@ -31,4 +31,33 @@ class User(Base):
     default= datetime.now,
     nullable=False
 )
-Base.metadata.create_all(bind=engine)    
+
+CONTENT_DATABASE_URL = f"sqlite:///{BASE_DIR / 'content.db'}"
+
+content_engine = create_engine(CONTENT_DATABASE_URL)
+ContentSessionLocal = sessionmaker(bind=content_engine)
+class Note(Base):
+    __tablename__ = "notes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(nullable=False)
+    filename: Mapped[str] = mapped_column(nullable=False)
+    content: Mapped[str] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now,
+        nullable=False
+    )
+    __table_args__ = (
+        UniqueConstraint("user_id", "filename"),
+    )
+def get_content_db():
+    db = ContentSessionLocal()
+
+    try:
+        yield db
+    finally:
+        db.close()
+        
+Base.metadata.create_all(bind=engine, tables=[User.__table__])
+Base.metadata.create_all(bind=content_engine, tables=[Note.__table__])

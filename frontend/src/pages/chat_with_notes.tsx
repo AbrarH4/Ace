@@ -95,6 +95,7 @@ function ChatWithNotes() {
         const response = await fetch("http://localhost:8000/upload", {
           method: "POST",
           body: ShippingBox,
+          credentials: "include",
         });
 
         // ============================================
