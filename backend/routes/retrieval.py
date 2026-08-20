@@ -111,7 +111,7 @@ def get_relevant_chunks(file_content, encoded_question, top_k=5):
     return "\n\n".join(top_chunks)
 
 
-def Ranking_System(keyword, question):
+def Ranking_System(keyword, question, notes):
     """Rank all loaded notes by combined lexical and semantic relevance.
 
     Scoring is done in two passes:
@@ -142,12 +142,12 @@ def Ranking_System(keyword, question):
     semantic_scores = {}
 
     # Lexical pass — keyword frequency scoring
-    for keys, notes in loader.Notes.items():
+    for keys, notes_content in notes.items():
         if keys.lower() == "error.txt":
             continue  # Skip the reserved error placeholder file
 
         scores[keys] = 0
-        notes_lower = notes.lower()
+        notes_lower = notes_content.lower()
         for word in keyword:
             word_lower = word.lower()
             if word_lower in keys.lower():
@@ -159,10 +159,13 @@ def Ranking_System(keyword, question):
     encoded_question = loader.model.encode(question, convert_to_tensor=True)
 
     # Semantic pass — cosine similarity scoring
-    for keys, notes in loader.Notes.items():
+    for keys, note_content in notes.items():
         if keys.lower() == "error.txt":
             continue
-        encoded_notes = loader.Embedding_cache[keys]
+        encoded_notes = loader.model.encode(
+        note_content,
+        convert_to_tensor=True
+    )
         score = util.cos_sim(encoded_question, encoded_notes)
         semantic_scores[keys] = score.item()
 

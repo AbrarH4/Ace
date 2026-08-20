@@ -15,7 +15,7 @@ from backend.routes import loader
 import backend.routes.retrieval as retrieval
 
 
-def get_quiz_context(topic=""):
+def get_quiz_context(notes,topic=""):
     """Build the LLM context string for a quiz session.
 
     When topic is provided, the retrieval pipeline ranks all loaded notes and
@@ -30,7 +30,7 @@ def get_quiz_context(topic=""):
         A formatted context string, or None if no notes are loaded or no
         relevant content is found for the given topic.
     """
-    if not loader.Notes:
+    if not notes:
         # No notes have been indexed yet — cannot generate a quiz
         return None
     if topic:

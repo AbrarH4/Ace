@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, true
+from sqlalchemy import create_engine, true, select
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
@@ -51,6 +51,17 @@ class Note(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "filename"),
     )
+def get_user_notes(db, user_id):
+    result = db.execute(
+        select(Note).where(Note.user_id == user_id)
+    )
+
+    notes = result.scalars().all()
+
+    return {
+        note.filename: note.content
+        for note in notes
+    }
 def get_content_db():
     db = ContentSessionLocal()
 

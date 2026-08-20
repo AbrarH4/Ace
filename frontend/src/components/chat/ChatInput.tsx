@@ -60,6 +60,7 @@ function ChatInput({
 
       const response = await fetch("http://localhost:8000/question_input", {
         method: "POST",
+        credentials: "include",
 
         headers: {
           "Content-Type": "application/json",

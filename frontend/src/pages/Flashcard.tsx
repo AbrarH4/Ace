@@ -28,6 +28,7 @@ function Flashcards() {
       setIsGenerating(false);
     } else {
       setHasNotes(true);
+      setIsGenerating(true);
       const flashcard_Response = await fetch(
         "http://localhost:8000/flashcards",
         {
