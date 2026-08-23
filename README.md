@@ -1,231 +1,69 @@
-# Study Assistant
+# Ace
 
-Ask questions directly from your own notes — online or offline.
+Turn your notes into a conversation.
 
-Study Assistant is a native desktop application that searches your local note collection using semantic search and AI-powered retrieval, then generates grounded answers based on your material instead of the general internet.
+Ace is an AI-powered study workspace that helps students learn directly from their own notes. Instead of searching through multiple files to find an answer, users can ask questions and get responses based on their uploaded study material.
 
-Built for students, self-learners, researchers, and anyone who maintains large collections of study notes.
-
----
-
-## Preview
-
-### Main Interface
-![Main Interface](SCREENSHOTS/MAIN_UI.png)
----
-### Question
-![Question](SCREENSHOTS/QUESTION.png)
-----
-### ANSWER
-![ANSWER](SCREENSHOTS/ANSWER.png)
----
-### QUIZ
-![QUIZ](SCREENSHOTS/QUIZ.png)
----
-### RESULTS
-![RESULTS](SCREENSHOTS/RESULTS.png)
-
----
+Ace also provides interactive quizzes and AI-generated flashcards to help students revise and test their understanding.
 
 ## Features
 
-- Semantic note search using Sentence Transformers
-- Multi-file context retrieval
-- AI-generated explanations grounded in your notes
-- Supports beginner, detailed, comparison, and ELI5 explanations
-- Automatic source file tracking
-- Local-first note workflow
-- Conversation history — ask follow-up questions naturally
-- Embedding cache — fast startup after first launch
-- Supports PDF, DOCX, PPTX, TXT, and MD formats
-- Chunk-level relevance filtering for large documents
-- Fast desktop interface built with CustomTkinter
-- Multiple AI provider fallback system
-  - Google Gemini
-  - Groq
-  - OpenRouter
-- Offline mode via Ollama — works without internet
-- Now has an exe file support for users who dont want the setup hassle.
-- The Quiz mode is now available. You can test yourself on your notes. 
----
-
-## Online vs Offline
-
-Study Assistant works in both modes automatically.
-
-Study Assistant tries providers in this order, falling back automatically if one is unavailable:
-
-1. Ollama (local) — tried first if running, fastest and fully offline
-2. Google Gemini
-3. Groq
-4. OpenRouter
-
-This means if Ollama is running locally, it's used immediately with no network call at all. If it's not running, the app falls through to whichever cloud providers have API keys configured.
-
-If no internet is detected and Ollama is not running, the app will guide you with clear instructions on what to do.
+- Ask questions about your own notes
+- Semantic search for relevant content
+- Keyword matching combined with semantic retrieval
+- Answers grounded in the user's notes
+- Multi-file note retrieval
+- Interactive quiz generation
+- True/False, Multiple Choice, and Mixed quizzes
+- Instant quiz feedback
+- AI-generated flashcards
+- Flashcard export compatible with Anki
+- User authentication and protected routes
+- Session and JWT-based authentication
+- Persistent database using SQLite
+- Embedding caching to avoid unnecessary recomputation
 
 ---
 
 ## How It Works
 
-1. Load your notes folder.
-2. Ask a question.
-3. Study Assistant searches your notes using:
-   - Keyword matching
-   - Semantic embeddings
-4. The most relevant notes are retrieved.
-5. Relevant chunks are filtered and sent to the selected LLM.
-6. The answer is generated using your notes.
-7. Source files used for the answer are displayed.
+1. The user uploads their study notes.
+2. Ace processes the notes and creates searchable representations.
+3. The user asks a question.
+4. Ace uses keyword matching and semantic similarity to find relevant content.
+5. The most relevant sections are selected.
+6. Only the relevant context is provided to the AI.
+7. The AI generates an answer based on the retrieved notes.
+
+This retrieval process helps keep answers focused on the user's own study material.
 
 ---
 
-## Example
+## Quizzes
 
-### Question
+Ace can generate interactive quizzes from the user's notes.
 
-```text
-What is the difference between CNN and RNN?
-```
+Users can choose:
 
-### Output
+- Topic
+- Number of questions
+- Question type
 
-```text
-CNNs are primarily designed to process spatial information such as images.
+Supported question types:
 
-RNNs are designed to process sequential information where previous inputs influence future outputs.
+- True/False
+- Multiple Choice
+- Mixed
 
-Key Difference:
-- CNNs focus on spatial relationships.
-- RNNs focus on temporal relationships.
-```
-
-### Sources Used
-
-```text
-Deep Learning Notes.txt
-Neural Networks.txt
-CNN vs RNN.txt
-```
+After answering, users receive immediate feedback and can review their results.
 
 ---
 
-## Installation
+## Flashcards
 
-### 1. Clone the Repository
+Ace can generate flashcards from study material for revision.
 
-```bash
-git clone https://github.com/YOUR_USERNAME/Ace.git
-cd Ace
-```
-
-### 2. Create a Virtual Environment
-
-```bash
-python -m venv venv
-```
-
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-Linux / macOS:
-
-```bash
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-## Quick Start — Two Ways to Run This
-
-**Option A — No account needed (Ollama, fully offline)**
-Skip API keys entirely. Install Ollama, pull a model, and you're done — see the Ollama Setup section below. No signup, no internet required after setup.
-
-**Option B — Cloud providers (faster, optional)**
-If you'd rather use a cloud AI provider, get a free API key from one of:
-- [Google AI Studio](https://aistudio.google.com/apikey) — free Gemini key
-- [Groq](https://console.groq.com/keys) — free, generous rate limits
-- [OpenRouter](https://openrouter.ai/keys) — free tier models available
-
-Takes about 2 minutes. Paste it into your `.env` file and you're set.
-
-You only need ONE of the two options above — not both.
-
-
-### 4. Configure Environment Variables
-> Skip this step entirely if you're using Ollama (Option A above).
-Create a `.env` file using `.env.example`.
-
-Example:
-
-```env
-GEMINI_API_KEY=your_key_here
-GROQ_API_KEY=your_key_here
-OPENROUTER_API_KEY=your_key_here
-```
-
-You only need one provider configured, but multiple providers enable automatic fallback.
-
-At least one cloud provider key is recommended. If you only want offline mode, see Ollama Setup below and you can leave all keys empty.
-
-### 5. Run the Application
-
-```bash
-python Ace.py
-```
-
----
-
-## Ollama Setup (Offline Mode)
-
-Ollama lets Study Assistant run fully offline using a local AI model on your machine.
-
-### 1. Install Ollama
-
-Download and install from:
-
-```
-https://ollama.com/download
-```
-
-### 2. Pull the Model
-
-```bash
-ollama pull llama3.2
-```
-
-This downloads the model once (~2 GB). No re-download on subsequent launches.
-
-### 3. Start Ollama
-
-Ollama usually starts automatically on boot. If it is not running, start it manually:
-
-```bash
-ollama serve
-```
-
-Study Assistant will detect Ollama automatically on the next launch and switch to offline mode.
-
----
-
-## Supported File Formats
-
-Study Assistant works with the following file formats out of the box:
-
-- `.txt` — plain text notes
-- `.md` — Markdown notes
-- `.pdf` — PDF documents and textbooks
-- `.docx` — Microsoft Word documents
-- `.pptx` — PowerPoint lecture slides
-
-No special formatting is required.
+Users can go through the cards interactively and export generated flashcards in a format compatible with Anki.
 
 ---
 
@@ -233,61 +71,85 @@ No special formatting is required.
 
 ### Frontend
 
+- React
+- TypeScript
+- JavaScript
+- HTML5
+- CSS3
+
+### Backend
+
 - Python
-- CustomTkinter
+- FastAPI
+- SQLite
 
-### Retrieval System
+### AI / Retrieval
 
-- Sentence Transformers
-- all-MiniLM-L6-v2
-
-### AI Providers
-
-- Google Gemini
-- Groq
-- OpenRouter
-- Ollama (local)
-
-### Core Concepts
-
-- Semantic Search
+- OpenAI API
+- Semantic embeddings
+- Semantic search
+- Keyword matching
 - Retrieval-Augmented Generation (RAG)
-- Embedding Similarity Search
-- Chunk-Level Context Filtering
-- Context-Based Answer Generation
 
 ---
 
-## Project Goals
+## Project Structure
 
-The goal of Study Assistant is to make personal notes searchable through natural language.
+Ace uses a separate frontend and backend architecture.
 
-Instead of manually opening dozens of files, users can ask questions and receive answers generated directly from their own knowledge base — with no dependency on the internet if preferred.
-
----
-
-## Roadmap
-
-### Completed in v1.0
-- PDF, DOCX, PPTX support
-- Conversation history
-- Embedding cache for fast subsequent launches
-- Chunk-level relevance filtering for large documents
-- Multi-provider cloud AI fallback
-- Offline mode via Ollama
-
-
-
-### Future
-- Cross-platform packaging
-- Mobile companion app
+The frontend handles the user interface and interactions, while the FastAPI backend handles authentication, database operations, note processing, retrieval, and AI-related functionality.
 
 ---
 
-## Contributing
+## Running Ace
 
-Contributions, suggestions, bug reports, and feature requests are welcome.
-If you find a bug or have an idea for improvement, open an issue.
+Clone the repository:
+
+```bash
+git clone https://github.com/AbrarH4/Ace.git
+cd Ace
+```
+
+Install the backend dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Follow the project configuration instructions and start the backend.
+
+Then start the frontend using the appropriate development command for the React application.
+
+---
+
+## What I Learned
+
+Ace was my first project where I combined a frontend and backend into one larger application.
+
+While building it, I learned about:
+
+- React and TypeScript
+- FastAPI and Python
+- REST APIs
+- Authentication and protected routes
+- JWTs, sessions, and cookies
+- SQLite databases
+- Semantic search and embeddings
+- RAG systems
+- Embedding caching
+- Connecting frontend and backend systems
+
+---
+
+## Future Improvements
+
+Some features I would like to explore in future versions include:
+
+- AI-powered note generation
+- Specialized examination sessions
+- Performance reports highlighting weak topics
+- Persistent notes so users do not need to upload them repeatedly
+- Further improvements to retrieval accuracy and the overall study experience
 
 ---
 
@@ -295,10 +157,12 @@ If you find a bug or have an idea for improvement, open an issue.
 
 MIT License
 
-Feel free to use, modify, and distribute this project.
-
 ---
 
 ## Author
 
-Built by a student developer who wanted a better way to study from personal notes using AI.
+Built independently by Abrar H.
+
+```
+
+```
