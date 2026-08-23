@@ -17,6 +17,7 @@ from routes import loader
 from routes.config import STOP_WORDS_FILE
 from sentence_transformers import util
 import json
+from routes.loader import model_loaded, bg_model_loading
 
 
 def load_stop_words():
@@ -112,6 +113,8 @@ def get_relevant_chunks(file_content, encoded_question, top_k=5):
 
 
 def Ranking_System(keyword, question, notes):
+    if not model_loaded:
+        bg_model_loading()
     """Rank all loaded notes by combined lexical and semantic relevance.
 
     Scoring is done in two passes:

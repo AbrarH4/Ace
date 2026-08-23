@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Sidebar from "../components/chat/Sidebar";
 import ChatHeader from "../components/chat/ChatHeader";
@@ -25,7 +25,27 @@ function ChatWithNotes() {
   // =====================================================
   // This is called immediately when the user presses send.
   // The question appears in the chat before FastAPI responds.
+  const checkNotes = async () => {
+    try {
+      const notesResponse = await fetch("http://localhost:8000/notes", {
+        credentials: "include",
+      });
 
+      if (!notesResponse.ok) {
+        throw new Error("Failed to fetch notes");
+      }
+
+      const notes = await notesResponse.json();
+
+      setIsNotesUploaded(notes.length > 0);
+    } catch (error) {
+      console.error("Failed to load notes:", error);
+      setIsNotesUploaded(false);
+    }
+  };
+  useEffect(() => {
+    checkNotes();
+  });
   const addUserMessage = (userMessage: string) => {
     setMessages((previousMessages) => [
       ...previousMessages,
@@ -127,7 +147,7 @@ function ChatWithNotes() {
       {/* SIDEBAR                                       */}
       {/* ============================================= */}
 
-      <Sidebar uploadedNotes={uploadedNotes} />
+      <Sidebar />
 
       {/* ============================================= */}
       {/* MAIN CHAT                                     */}

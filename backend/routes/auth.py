@@ -21,7 +21,10 @@ class LoginRequest(BaseModel):
 
 def get_passwordhash(password: str):
     return password_hash.hash(password)
-    
+@router_auth.post("/logout")
+def logout(response: Response = None):
+    response.delete_cookie("access_token")
+    return {"message": "Logged out successfully"}
 @router_auth.post("/register")
 def register(data: RegisterRequest, db=Depends(get_db)):
     existing_user = db.scalar(

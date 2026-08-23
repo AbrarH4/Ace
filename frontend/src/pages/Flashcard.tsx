@@ -50,6 +50,11 @@ function Flashcards() {
   const handleFlip = () => {
     setIsFlipped((previous) => !previous);
   };
+  const handleBack = () => {
+    setFlashcard([]);
+    setIndex(0);
+    setIsGenerating(false);
+  };
   const currentFlashcard = flashcard[currentIndex];
   const handleNext = () => {
     setIsFlipped(false);
@@ -72,7 +77,7 @@ function Flashcards() {
   };
   return (
     <div className="chat-layout">
-      <Sidebar uploadedNotes={uploadedNotes} />
+      <Sidebar />
 
       <main className="chat-main">
         <FlashcardHeader
@@ -144,6 +149,7 @@ function Flashcards() {
               onPrevious={handlePrevious}
               currentIndex={currentIndex}
               totalCards={flashcard.length}
+              handleNew={handleBack}
             />
           </>
         )}

@@ -1,8 +1,8 @@
 from scripts import loader
 import scripts.retrieval as retrieval
-from scripts.quiz import get_quiz_context
+from backend.routes.GenQuiz import get_quiz_context
 
-from scripts.quiz import test_evaluation as evaluate_answer
+from backend.routes.GenQuiz import test_evaluation as evaluate_answer
 
 
 # --- test_evaluation() -------------------------------------------------

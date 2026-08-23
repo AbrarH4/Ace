@@ -5,6 +5,7 @@ type flashcardControlsProps = {
   onPrevious: () => void;
   currentIndex: number;
   totalCards: number;
+  handleNew: () => void;
 };
 function FlashcardControls({
   onFlip,
@@ -12,7 +13,9 @@ function FlashcardControls({
   onPrevious,
   currentIndex,
   totalCards,
+  handleNew,
 }: flashcardControlsProps) {
+  const isLast = currentIndex === totalCards - 1;
   return (
     <section className="flashcard-controls">
       <div className="card-navigation">
@@ -24,11 +27,14 @@ function FlashcardControls({
         <span>
           Card {currentIndex + 1} of {totalCards}
         </span>
-
-        <button onClick={onNext}>
-          Next
-          <ChevronRight size={18} />
-        </button>
+        {isLast ? (
+          <button onClick={handleNew}>Back to Flashcard</button>
+        ) : (
+          <button onClick={onNext}>
+            Next
+            <ChevronRight size={18} />
+          </button>
+        )}
       </div>
 
       <div className="card-actions">

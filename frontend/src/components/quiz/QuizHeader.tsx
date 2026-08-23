@@ -1,6 +1,10 @@
 import { FileText, BrainCircuit } from "lucide-react";
-
-function QuizHeader() {
+type QuizHeaderProps = {
+  hasQuiz: boolean;
+  Generating: boolean;
+  handleGenerate: () => void;
+};
+function QuizHeader({ hasQuiz, Generating, handleGenerate }: QuizHeaderProps) {
   return (
     <header className="flashcard-header">
       <div className="header-left">
@@ -12,9 +16,13 @@ function QuizHeader() {
         </div>
       </div>
 
-      <button className="generate-btn">
+      <button
+        className="generate-btn"
+        disabled={hasQuiz || Generating}
+        onClick={handleGenerate}
+      >
         <BrainCircuit size={18} />
-        Generate Quiz
+        {Generating ? "Generating...." : "Generate Quiz"}
       </button>
     </header>
   );

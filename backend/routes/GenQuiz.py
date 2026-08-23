@@ -11,8 +11,8 @@ generator (provider.py). It handles two responsibilities:
 """
 
 # quiz.py
-from backend.routes import loader
-import backend.routes.retrieval as retrieval
+from routes import loader
+import routes.retrieval as retrieval
 
 
 def get_quiz_context(notes,topic=""):
@@ -36,7 +36,7 @@ def get_quiz_context(notes,topic=""):
     if topic:
         # Extract keywords and rank notes by relevance to the topic
         keywords = retrieval.keyword(topic)
-        ranking_result = retrieval.Ranking_System(keywords, topic)
+        ranking_result = retrieval.Ranking_System(notes=notes, keyword=keywords, question=topic)
         if not ranking_result:
             return None
         winning_files, encoded_topic = ranking_result
@@ -44,9 +44,9 @@ def get_quiz_context(notes,topic=""):
         # Collect the top relevant chunks from each winning file
         context = ""
         for filename in winning_files:
-            if filename in loader.Notes:
+            if filename in notes:
                 chunks = retrieval.get_relevant_chunks(
-                    loader.Notes[filename], encoded_topic
+                    notes[filename], encoded_topic
                 )
                 context += f"SOURCE: {filename}\n{chunks}\n\n"
         return context if context else None
@@ -54,7 +54,7 @@ def get_quiz_context(notes,topic=""):
         # No topic — concatenate full content of every note
         return "\n\n".join(
             f"SOURCE: {filename}\n{content}"
-            for filename, content in loader.Notes.items()
+            for filename, content in notes.items()
         )
 
 

@@ -37,5 +37,6 @@ async def upload_notes(file: list[UploadFile] = File(...), user_id=Depends(get_c
 async def get_notes(user_id = Depends(get_current_user), db = Depends(get_content_db)):
     result = db.execute(select(Note).where(Note.user_id==user_id))
     notes = result.scalars().all()
+    
     return notes
         

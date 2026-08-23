@@ -1,21 +1,61 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+type QuizControlsProps = {
+  currentIndex: number;
+  totalQuestions: number;
+  isSubmitted: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+  onSubmit: () => void;
+};
 
-function QuizControls() {
+function QuizControls({
+  currentIndex,
+  totalQuestions,
+  isSubmitted,
+  onPrevious,
+  onNext,
+  onSubmit,
+}: QuizControlsProps) {
+  const isFirst = currentIndex === 0;
+  const isLast = currentIndex === totalQuestions - 1;
+
   return (
-    <section className="flashcard-controls">
-      <div className="card-navigation">
-        <button>
-          <ChevronLeft size={18} />
-          Previous
-        </button>
+    <section className="quiz-controls">
+      <button
+        type="button"
+        className="quiz-nav-button secondary"
+        onClick={onPrevious}
+        disabled={isFirst}
+      >
+        <span>←</span>
+        Previous
+      </button>
 
-        <span>Score: 0 / 10</span>
-
-        <button>
-          Next
-          <ChevronRight size={18} />
-        </button>
+      <div className="quiz-counter">
+        <strong>{currentIndex + 1}</strong>
+        <span>/</span>
+        <span>{totalQuestions}</span>
       </div>
+
+      {isLast && !isSubmitted ? (
+        <button
+          type="button"
+          className="quiz-nav-button submit"
+          onClick={onSubmit}
+        >
+          Submit Quiz
+          <span>✓</span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="quiz-nav-button primary"
+          onClick={onNext}
+          disabled={isLast}
+        >
+          Next
+          <span>→</span>
+        </button>
+      )}
     </section>
   );
 }
