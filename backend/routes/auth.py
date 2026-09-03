@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 import hashlib
 from pwdlib import PasswordHash
-from database import User, get_db
+from backend.database import User, get_db
 from sqlalchemy import select
-from auth.security import create_access_token
+from backend.auth.security import create_access_token
 
 router_auth = APIRouter()
 

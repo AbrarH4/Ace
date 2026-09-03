@@ -1,8 +1,10 @@
-from sqlalchemy import select
-from fastapi import APIRouter, UploadFile, File, Depends
-from auth.dependencies import get_current_user
-from database import get_content_db, Note
-from routes  import loader
+from httpx import HTTPError
+from pydantic import BaseModel
+from sqlalchemy import delete, select
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
+from backend.auth.dependencies import get_current_user
+from backend.database import get_content_db, Note
+from backend.routes  import loader
 
 router = APIRouter()
 @router.post('/upload')
@@ -40,3 +42,16 @@ async def get_notes(user_id = Depends(get_current_user), db = Depends(get_conten
     
     return notes
         
+
+@router.delete("/notes/{note_id}")
+def delete_notes( note_id: int, current_user = Depends(get_current_user), db = Depends(get_content_db)):
+    
+    result = db.execute(delete(Note).where(current_user == Note.user_id, Note.id == note_id))
+    if result.rowcount == 0:
+        raise HTTPException(
+            status_code= 404,
+            detail = 'NOTE NOT FOUND'
+        )
+    
+    db.commit()
+    return "NOTE DELETED SUCCESSFULLY."

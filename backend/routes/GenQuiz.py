@@ -11,8 +11,8 @@ generator (provider.py). It handles two responsibilities:
 """
 
 # quiz.py
-from routes import loader
-import routes.retrieval as retrieval
+from backend.routes import loader
+import backend.routes.retrieval as retrieval
 
 
 def get_quiz_context(notes,topic=""):

@@ -13,11 +13,11 @@ content contains an exact keyword are boosted, while the semantic score
 catches paraphrases and conceptual matches.
 """
 
-from routes import loader
-from routes.config import STOP_WORDS_FILE
+from backend.routes import loader
+from backend.routes.config import STOP_WORDS_FILE
 from sentence_transformers import util
 import json
-from routes.loader import model_loaded, bg_model_loading
+from backend.routes.loader import model_loaded, bg_model_loading
 
 
 def load_stop_words():

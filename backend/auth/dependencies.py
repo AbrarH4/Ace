@@ -1,5 +1,5 @@
 from fastapi import Cookie, HTTPException
-from auth.security import verify_access_token
+from backend.auth.security import verify_access_token
 
 def get_current_user(access_token: str | None = Cookie(default=None)):
     if not access_token:

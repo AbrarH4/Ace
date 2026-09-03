@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Body, Depends
 router_question = APIRouter()
-from routes.retrieval import Ranking_System, keyword
-from routes import loader
-from routes.provider import GenerateAnswer
-from auth.dependencies import get_current_user
-from database import get_content_db, get_user_notes
+from backend.routes.retrieval import Ranking_System, keyword
+from backend.routes import loader
+from backend.routes.provider import GenerateAnswer
+from backend.auth.dependencies import get_current_user
+from backend.database import get_content_db, get_user_notes
 
 
 model_loaded = False

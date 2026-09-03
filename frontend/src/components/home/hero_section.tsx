@@ -2,6 +2,8 @@ import React from "react";
 import { Sparkles, Bot, CornerDownLeft, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ROUTES } from "../../config/ROUTES";
+// @ts-expect-error - CSS imports are handled by the bundler
+import "./home.css";
 function Hero_Section() {
   return (
     <section className="layout">

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
-from auth.dependencies import get_current_user
-from routes.provider import generateFlashcard
-from database import get_content_db, Note
+from backend.auth.dependencies import get_current_user
+from backend.routes.provider import generateFlashcard
+from backend.database import get_content_db, Note
 from pydantic import BaseModel
 from sqlalchemy import select 
 

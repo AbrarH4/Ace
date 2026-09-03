@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.quiz import Quiz_router
-from routes.notes import router
-from routes.question_input import router_question
-from routes.auth import router_auth
-from routes.flashcards import Flashcard_router
+from backend.routes.quiz import Quiz_router
+from backend.routes.notes import router
+from backend.routes.question_input import router_question
+from backend.routes.auth import router_auth
+from backend.routes.flashcards import Flashcard_router
 
 app = FastAPI()
 app.include_router(router)

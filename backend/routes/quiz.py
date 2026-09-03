@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
-from auth.dependencies import get_current_user
-from routes.GenQuiz import get_quiz_context, test_evaluation
-from database import get_content_db
-from database import Note
-from routes.provider import GenerateQuiz
+from backend.auth.dependencies import get_current_user
+from backend.routes.GenQuiz import get_quiz_context, test_evaluation
+from backend.database import get_content_db
+from backend.database import Note
+from backend.routes.provider import GenerateQuiz
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from database import get_user_notes
+from backend.database import get_user_notes
 
 
 Quiz_router = APIRouter()

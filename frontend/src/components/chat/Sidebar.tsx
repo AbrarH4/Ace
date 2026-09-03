@@ -6,10 +6,13 @@ import {
   Settings,
   GraduationCap,
   FileText,
+  Trash2,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { ROUTES } from "../../config/ROUTES";
 import { useCallback, useEffect, useState } from "react";
+// @ts-expect-error - CSS imports are handled by the bundler
+import "./Sidebar.css";
 
 type Note = {
   id: number;
@@ -24,6 +27,8 @@ function Sidebar() {
 
   const [uploadedNotes, setUploadedNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(true);
+  const [isDeleteClicked, setIsDeleteClicked] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
   const loadNotes = useCallback(async () => {
     try {
@@ -54,7 +59,32 @@ function Sidebar() {
       setLoadingNotes(false);
     }
   }, []);
+  const handleDelete = async (noteId: number) => {
+    try {
+      const response = await fetch(`http://localhost:8000/notes/${noteId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
 
+      if (response.status === 401) {
+        console.error("User is not authenticated");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete note: ${response.status}`);
+      }
+
+      // Remove it immediately from the UI
+      setUploadedNotes((notes) => notes.filter((note) => note.id !== noteId));
+    } catch (error) {
+      console.error("Failed to delete note:", error);
+    }
+  };
+  const confirmDelete = () => {
+    if (isDeleteClicked) {
+    }
+  };
   // Load notes when Sidebar appears
   useEffect(() => {
     loadNotes();
@@ -153,6 +183,17 @@ function Sidebar() {
                 <div className="sidebar-note-info">
                   <span title={note.filename}>{note.filename}</span>
                 </div>
+
+                <button
+                  className="delete-note-btn"
+                  onClick={() => {
+                    setSelectedNote(note);
+                    setIsDeleteClicked(true);
+                  }}
+                  title="Delete note"
+                >
+                  <Trash2 size={15} />
+                </button>
               </div>
             ))}
           </div>
@@ -168,6 +209,36 @@ function Sidebar() {
           <span>Settings</span>
         </button>
       </div>
+      {isDeleteClicked && selectedNote && (
+        <div className="delete-modal-overlay">
+          <div className="delete-modal">
+            <h2>Delete note?</h2>
+
+            <p>Are you sure you want to delete "{selectedNote.filename}"?</p>
+
+            <div className="delete-modal-actions">
+              <button
+                onClick={() => {
+                  setIsDeleteClicked(false);
+                  setSelectedNote(null);
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  handleDelete(selectedNote.id);
+                  setIsDeleteClicked(false);
+                  setSelectedNote(null);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

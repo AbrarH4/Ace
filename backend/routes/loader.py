@@ -25,7 +25,7 @@ import io
 import fitz
 from docx import Document
 from pptx import Presentation
-from routes.config import EMBEDDINGS_CACHE_FILE
+from backend.routes.config import EMBEDDINGS_CACHE_FILE
 
 # Shared state — imported by retrieval.py and UI.py
 Notes = {}              # Filename → plain-text content for every loaded note
