@@ -209,6 +209,7 @@ function Sidebar() {
           <span>Settings</span>
         </button>
       </div>
+
       {isDeleteClicked && selectedNote && (
         <div className="delete-modal-overlay">
           <div className="delete-modal">

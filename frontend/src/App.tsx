@@ -6,7 +6,7 @@ import Flashcards from "./pages/Flashcard";
 import Quiz from "./pages/Quiz";
 import Register from "./pages/Register";
 import Login from "./pages/login";
-
+import Profile from "./pages/profile";
 import AuthRequired from "./components/common/AuthenticationRequired";
 
 function App() {
@@ -44,6 +44,7 @@ function App() {
 
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );

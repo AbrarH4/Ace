@@ -5,6 +5,8 @@ from pwdlib import PasswordHash
 from backend.database import User, get_db
 from sqlalchemy import select
 from backend.auth.security import create_access_token
+from backend.auth.dependencies import get_current_user
+
 
 router_auth = APIRouter()
 
@@ -25,6 +27,8 @@ def get_passwordhash(password: str):
 def logout(response: Response = None):
     response.delete_cookie("access_token")
     return {"message": "Logged out successfully"}
+
+
 @router_auth.post("/register")
 def register(data: RegisterRequest, db=Depends(get_db)):
     existing_user = db.scalar(
@@ -39,7 +43,25 @@ def register(data: RegisterRequest, db=Depends(get_db)):
     db.add(new_user)
     db.commit()
     
+
+class Details_type(BaseModel):
+    user_id: int
     
+@router_auth.get("/profile")
+def get_user_details(
+    current_user=Depends(get_current_user),
+    db=Depends(get_db)
+):
+    user_details = db.execute(
+        select(User).where(User.id == current_user)
+    ).scalars().first()
+
+    if not user_details:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user_details
+
+
 @router_auth.post("/login")
 def login(data: LoginRequest, db=Depends(get_db), response: Response = None):
     existing_user = db.scalar(

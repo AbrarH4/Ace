@@ -20,6 +20,7 @@ def get_db():
         yield db
     finally:
         db.close()
+        
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -69,6 +70,11 @@ def get_content_db():
         yield db
     finally:
         db.close()
-        
+    
+
+    
+    
+    
+    
 Base.metadata.create_all(bind=engine, tables=[User.__table__])
 Base.metadata.create_all(bind=content_engine, tables=[Note.__table__])
