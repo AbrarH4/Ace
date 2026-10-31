@@ -1,18 +1,32 @@
-from sqlalchemy import create_engine, true, select
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from sqlalchemy.orm import Mapped, mapped_column
+import os
 from datetime import datetime
-from sqlalchemy import DateTime, UniqueConstraint
-
 from pathlib import Path
 
+from dotenv import load_dotenv
+from sqlalchemy import DateTime, UniqueConstraint, create_engine, select
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+
 BASE_DIR = Path(__file__).resolve().parent
-DATABASE_URL = f"sqlite:///{BASE_DIR / 'ace.db'}"
-engine = create_engine(DATABASE_URL)
+
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_KEY")
+if not DATABASE_URL:
+    raise RuntimeError(
+        "DATABASE_KEY is not set. Add it to your .env file "
+        "or to your host's environment variables."
+    )
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine)
+
 
 class Base(DeclarativeBase):
     pass
+
+
 def get_db():
     db = SessionLocal()
 
@@ -20,23 +34,21 @@ def get_db():
         yield db
     finally:
         db.close()
-        
+
+
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(unique=True, nullable=False) 
+    email: Mapped[str] = mapped_column(unique=True, nullable=False)
     full_name: Mapped[str] = mapped_column(nullable=False)
     password_hash: Mapped[str] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-    DateTime,
-    default= datetime.now,
-    nullable=False
-)
+        DateTime,
+        default=datetime.now,
+        nullable=False
+    )
 
-CONTENT_DATABASE_URL = f"sqlite:///{BASE_DIR / 'content.db'}"
 
-content_engine = create_engine(CONTENT_DATABASE_URL)
-ContentSessionLocal = sessionmaker(bind=content_engine)
 class Note(Base):
     __tablename__ = "notes"
 
@@ -52,6 +64,15 @@ class Note(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "filename"),
     )
+
+
+# Notes now live in the same Neon database as users.
+# These aliases keep any other file that imports the old names working.
+content_engine = engine
+ContentSessionLocal = SessionLocal
+get_content_db = get_db
+
+
 def get_user_notes(db, user_id):
     result = db.execute(
         select(Note).where(Note.user_id == user_id)
@@ -63,18 +84,6 @@ def get_user_notes(db, user_id):
         note.filename: note.content
         for note in notes
     }
-def get_content_db():
-    db = ContentSessionLocal()
 
-    try:
-        yield db
-    finally:
-        db.close()
-    
 
-    
-    
-    
-    
-Base.metadata.create_all(bind=engine, tables=[User.__table__])
-Base.metadata.create_all(bind=content_engine, tables=[Note.__table__])
+Base.metadata.create_all(bind=engine)

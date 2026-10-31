@@ -34,7 +34,11 @@ function AuthRequired({ children }: AuthRequiredProps) {
 
   // Still checking
   if (isAuthenticated === null) {
-    return <div>Checking authentication...</div>;
+    return (
+      <div key={"auth-check"} className="AUTHENTICATION CHECK">
+        Checking authentication...
+      </div>
+    );
   }
 
   // Not logged in

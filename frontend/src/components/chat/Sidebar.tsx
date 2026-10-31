@@ -181,7 +181,9 @@ function Sidebar() {
                 <FileText size={16} />
 
                 <div className="sidebar-note-info">
-                  <span title={note.filename}>{note.filename}</span>
+                  <span title={note.filename}>
+                    {note.filename.split("/")[1]}
+                  </span>
                 </div>
 
                 <button

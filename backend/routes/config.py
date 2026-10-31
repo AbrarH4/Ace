@@ -90,7 +90,7 @@ APP_VERSION = "1.3.0"
 
 # Cached sentence-transformer embeddings persisted between sessions to avoid
 # re-encoding unchanged files on every launch
-EMBEDDINGS_CACHE_FILE = APP_DIR / "embeddings_cache.pkl"
+
 
 # File extensions that the note loader will read and index
 ALLOWED_EXTENSIONS = {".txt", ".md", ".pdf", ".docx", ".pptx"}

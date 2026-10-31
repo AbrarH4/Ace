@@ -150,6 +150,7 @@ function Flashcards() {
               currentIndex={currentIndex}
               totalCards={flashcard.length}
               handleNew={handleBack}
+              flashcards={flashcard}
             />
           </>
         )}

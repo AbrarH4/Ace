@@ -5,7 +5,9 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./index.css";
 import App from "./App.tsx";
+import { applyTheme, getSavedTheme } from "./components/home/config/themes.ts";
 
+applyTheme(getSavedTheme());
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />

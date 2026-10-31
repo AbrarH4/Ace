@@ -251,26 +251,19 @@ def generateFlashcard(context, flashcard_count, topic=None):
         f"NOTEBOOK CONTEXT:\n{context}"
     )
     messages.append({"role": "user", "content": user_content})
-
+    # CHECKING FOR PROVIDERS TO ENSURE THAT THEIR KEYS EXIST. 
     for provider in PROVIDERS:
-        if not provider["key"] and provider["name"] != "Ollama (Local)":
-            print(f"Skipping {provider['name']}: No API key.")
-            continue
+        if not provider["key"]:
+            continue   
         try:
             print(f"Connecting for flashcard generation: {provider['name']}...")
-            client = OpenAI(base_url=provider["url"], api_key=provider["key"])
+            client = OpenAI(base_url=provider["url"], api_key=provider["key"])  # IMPORTANT FOR SENDING REQUESTS TO THE MODEL. 
             response = client.chat.completions.create(
                 model=provider["model"],
                 messages=messages,
                 temperature=0.3,
-            )
+            ) # FINAL RESPONSE BY THE MODEL IS SAVED IN RESPONSE FOR FUTURE USE.
             raw = response.choices[0].message.content
-            print("RESPONSE:")
-            print("\n")
-            print("\n")
-            print("\n")
-            print("\n")
-            print(raw)
             try:
                 flashcard_data = json.loads(raw.strip())
             except json.JSONDecodeError:

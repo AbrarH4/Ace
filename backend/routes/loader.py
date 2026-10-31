@@ -25,14 +25,13 @@ import io
 import fitz
 from docx import Document
 from pptx import Presentation
-from backend.routes.config import EMBEDDINGS_CACHE_FILE
+
 
 # Shared state — imported by retrieval.py and UI.py
 Notes = {}              # Filename → plain-text content for every loaded note
-Embedding_cache = {}    # Filename → sentence-transformer tensor (in-memory)
+   # Filename → sentence-transformer tensor (in-memory)
 Notes_Cache = {}        # Reserved for future use (currently unused)
-model = None            # SentenceTransformer instance, set in bg_model_loading()
-model_loaded = False    # True once bg_model_loading() finishes
+   # True once bg_model_loading() finishes
 
 
 # def has_supported_files(folder_path):
@@ -70,9 +69,7 @@ def store_notes(filename, filecontent):
     disk_cache = {}
 
     # Load the on-disk embedding cache so we can skip re-encoding unchanged files
-    if EMBEDDINGS_CACHE_FILE.exists():
-        with open(EMBEDDINGS_CACHE_FILE, "rb") as f:
-            disk_cache = pickle.load(f)
+   
     notes_changed = False  # Track whether any file is new or modified
 
 
@@ -95,42 +92,16 @@ def store_notes(filename, filecontent):
         file_hash = get_hash(filecontent)
         Notes[filename] = content   
 
-        if filename in disk_cache and disk_cache[filename][0] == file_hash:
-            # File unchanged — reuse the cached embedding tensor
-            Embedding_cache[filename] = disk_cache[filename][1]
-        else:
-            # File is new or modified — encode and update cache
-            Embedding_cache[filename] = model.encode(
-                content, convert_to_tensor=True
-            )
-            disk_cache[filename] = (file_hash, Embedding_cache[filename])
-            notes_changed = True
+      
 
     except Exception as e:
         print(f"Skipping unreadable asset {filename}: {e}")
 
     
     # Only write to disk if something changed to avoid unnecessary I/O
-    if notes_changed:
-        with open(EMBEDDINGS_CACHE_FILE, "wb") as f:
-            pickle.dump(disk_cache, f)
+    
 
 
-def bg_model_loading():
-    """Load the embedding model and notes in a background thread.
-
-    Intended to run in a threading.Thread so the splash screen remains
-    responsive during the potentially slow model download and note-indexing
-    steps. All widget updates use ui_instance.after() which is thread-safe.
-
-    Args:
-        ui_instance: The ACEUI instance whose status label should be updated.
-
-    Returns:
-        A (model, model_loaded) tuple; callers typically ignore the return
-        value since both are accessible as module-level globals.
-    """
-    global model, model_loaded
 
 
 
@@ -140,16 +111,7 @@ def bg_model_loading():
     # )
 
     # Deferred import keeps cold-start time low when the model is already cached
-    from sentence_transformers import SentenceTransformer
-
-    model = SentenceTransformer("all-MiniLM-L6-v2")
-
-    # Load the folder path and index notes (re-encodes only changed files)
-    model_loaded = True
-
-    # Signal the main thread to swap splash screen for main UI
-    return model, model_loaded
-
+  
 
 def get_hash(filecontent):
     if  not isinstance(filecontent, bytes):
@@ -189,43 +151,19 @@ def pdf_loader(filecontent):
     
     return text.strip()
 
-
 def docx_loader(filecontent):
-    """Extract plain text from a .docx Word document.
-
-    Reads paragraph objects from python-docx and concatenates their text.
-    Formatting, images, and tables are not extracted.
-
-    Args:
-        filepath: Absolute path to the .docx file.
-
-    Returns:
-        Concatenated paragraph text, stripped of leading/trailing whitespace.
-    """
-    text = ""
     doc = Document(io.BytesIO(filecontent))
-    for paragraph in doc.paragraphs:
-        text += paragraph.text or ""
-    return text.strip()
+    lines = [paragraph.text for paragraph in doc.paragraphs if paragraph.text]
+    return "\n".join(lines).strip()
 
 
 def presentation_loader(filecontent):
-    """Extract plain text from a .pptx PowerPoint presentation.
-
-    Iterates over all slides, shapes, and text-frame paragraphs. Only shapes
-    that expose a text_frame attribute are read; images and charts are skipped.
-
-    Args:
-        filecontent: Absolute path to the .pptx file.
-
-    Returns:
-        Concatenated slide text, stripped of leading/trailing whitespace.
-    """
-    text = ""
     prs = Presentation(io.BytesIO(filecontent))
+    lines = []
     for slide in prs.slides:
         for shape in slide.shapes:
             if shape.has_text_frame:
                 for paragraph in shape.text_frame.paragraphs:
-                    text += paragraph.text or ""
-    return text.strip()
+                    if paragraph.text:
+                        lines.append(paragraph.text)
+    return "\n".join(lines).strip()
