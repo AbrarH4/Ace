@@ -14,8 +14,7 @@ function Flashcards() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [currentIndex, setIndex] = useState<number>(0);
-  const [uploadedNotes, setUploadedNotes] = useState<string[]>([]);
-  const [hasNotes, setHasNotes] = useState(false);
+  const [_, setHasNotes] = useState(false);
   const [topic, setTopic] = useState("");
   const [cardCount, setCardCount] = useState(10);
   const handleGenerate = async () => {

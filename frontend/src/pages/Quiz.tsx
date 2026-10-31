@@ -20,14 +20,14 @@ type QuizResult = {
 function Quiz() {
   const [topic, setTopic] = useState("");
   const [questionCount, setQuestionCount] = useState(10);
-  const [uploadedNotes, setUploadedNotes] = useState<string[]>([]);
-  const [hasNotes, setHasNotes] = useState(false);
+
+  const [_, setHasNotes] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [results, setResults] = useState<QuizResult[]>([]);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [__, setIsSubmitted] = useState(false);
   const score = results.filter((result) => result.correct).length;
   const [isReviewing, setIsReviewing] = useState(false);
   const hasQuiz = quiz.length > 0;

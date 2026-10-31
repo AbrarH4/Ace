@@ -82,7 +82,7 @@ function ChatWithNotes() {
   // =====================================================
   // HANDLE FOLDER UPLOAD
   // =====================================================
-  const [uploadedNotes, setUploadedNotes] = useState<string[]>([]);
+  const [_, setUploadedNotes] = useState<string[]>([]);
   const handleFolderChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {

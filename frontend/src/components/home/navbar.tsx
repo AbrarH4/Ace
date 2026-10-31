@@ -1,5 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
-// @ts-expect-error - CSS imports are handled by the bundler
+import { NavLink, useNavigate } from "react-router-dom";
 import "./home.css";
 import { ROUTES } from "../../config/ROUTES";
 import { LogOut, Menu, X, CircleUser } from "lucide-react";

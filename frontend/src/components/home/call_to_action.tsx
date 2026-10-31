@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { ROUTES } from "../../config/ROUTES";
-// @ts-expect-error - CSS imports are handled by the bundler
 import "./home.css";
 function CallToAction() {
   return (
