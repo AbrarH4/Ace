@@ -12,7 +12,6 @@ import { Link, useLocation } from "react-router-dom";
 import { ROUTES } from "../../config/ROUTES";
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../../config/api";
-// @ts-expect-error - CSS imports are handled by the bundler
 import "./Sidebar.css";
 
 type Note = {
@@ -82,10 +81,7 @@ function Sidebar() {
       console.error("Failed to delete note:", error);
     }
   };
-  const confirmDelete = () => {
-    if (isDeleteClicked) {
-    }
-  };
+
   // Load notes when Sidebar appears
   useEffect(() => {
     loadNotes();

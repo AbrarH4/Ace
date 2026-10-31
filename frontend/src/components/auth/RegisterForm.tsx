@@ -1,5 +1,4 @@
 import { useState, type SubmitEvent } from "react";
-// @ts-expect-error - CSS imports are handled by the bundler
 import "./RegisterForm.css";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config/api";

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 // The stylesheet is handled by the bundler; TypeScript has no declaration for CSS imports.
-// @ts-expect-error CSS side-effect import
+
 import "./ProfileDetails.css";
 import { API_URL } from "../../config/api";
 import {

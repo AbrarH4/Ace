@@ -1,7 +1,4 @@
 import { Sparkles } from "lucide-react";
-type FlashCardHeader = {
-  handleGenerate: () => void;
-};
 type FlashcardHeaderProps = {
   onGenerate: () => void;
   isGenerating: boolean;

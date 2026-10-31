@@ -1,5 +1,4 @@
 import { ChevronLeft, ChevronRight, RefreshCcw, Download } from "lucide-react";
-import { useState } from "react";
 import { API_URL } from "../../config/api";
 type flashcardControlsProps = {
   onFlip: () => void;

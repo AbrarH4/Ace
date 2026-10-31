@@ -28,7 +28,7 @@ function Quiz() {
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [__, setIsSubmitted] = useState(false);
-  const score = results.filter((result) => result.correct).length;
+  // const score = results.filter((result) => result.correct).length;
   const [isReviewing, setIsReviewing] = useState(false);
   const hasQuiz = quiz.length > 0;
 
