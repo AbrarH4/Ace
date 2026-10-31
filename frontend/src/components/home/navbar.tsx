@@ -5,17 +5,21 @@ import { ROUTES } from "../../config/ROUTES";
 import { LogOut, Menu, X, CircleUser } from "lucide-react";
 import { useState } from "react";
 import SettingsMenu from "./SettingsMenu";
-
+import { API_URL } from "../../config/api";
 function Navigation_Bar() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:8000/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${API_URL}/auth/logout
+        `,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Logout failed");

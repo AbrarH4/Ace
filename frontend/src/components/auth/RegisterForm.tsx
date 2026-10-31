@@ -2,6 +2,7 @@ import { useState, type SubmitEvent } from "react";
 // @ts-expect-error - CSS imports are handled by the bundler
 import "./RegisterForm.css";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../../config/api";
 
 function RegisterForm() {
   const [fullName, setFullName] = useState("");
@@ -22,7 +23,7 @@ function RegisterForm() {
       }, 3000);
     };
     try {
-      const response = await fetch("http://localhost:8000/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

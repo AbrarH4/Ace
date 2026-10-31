@@ -4,7 +4,7 @@ import FlashcardViewer from "../components/flashcards/FlashcardViewer";
 import FlashcardControls from "../components/flashcards/FlashcardControls";
 import { useState } from "react";
 import { Layers3, Sparkles } from "lucide-react";
-
+import { API_URL } from "../config/api";
 type Flashcards = {
   front: string;
   back: string;
@@ -19,7 +19,7 @@ function Flashcards() {
   const [topic, setTopic] = useState("");
   const [cardCount, setCardCount] = useState(10);
   const handleGenerate = async () => {
-    const response = await fetch("http://localhost:8000/notes", {
+    const response = await fetch(`${API_URL}/notes`, {
       credentials: "include",
     });
     const notes = await response.json();
@@ -29,20 +29,17 @@ function Flashcards() {
     } else {
       setHasNotes(true);
       setIsGenerating(true);
-      const flashcard_Response = await fetch(
-        "http://localhost:8000/flashcards",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            topic: topic,
-            count: cardCount,
-          }),
+      const flashcard_Response = await fetch(`${API_URL}/flashcards`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          topic: topic,
+          count: cardCount,
+        }),
+      });
       const cards = await flashcard_Response.json();
       setFlashcard(cards);
     }

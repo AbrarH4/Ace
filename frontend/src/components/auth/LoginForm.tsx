@@ -2,7 +2,7 @@ import { useState, type SubmitEvent } from "react";
 // @ts-expect-error - CSS imports are handled by the bundler
 import "./LoginForm.css";
 import { useNavigate } from "react-router-dom";
-
+import { API_URL } from "../../config/api";
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +24,7 @@ function LoginForm() {
     };
 
     try {
-      const response = await fetch("http://localhost:8000/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

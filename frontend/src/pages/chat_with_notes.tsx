@@ -4,7 +4,7 @@ import Sidebar from "../components/chat/Sidebar";
 import ChatHeader from "../components/chat/ChatHeader";
 import ChatArea from "../components/chat/ChatArea";
 import ChatInput from "../components/chat/ChatInput";
-
+import { API_URL } from "../config/api";
 export type Message = {
   role: "user" | "assistant";
   content: string;
@@ -27,7 +27,7 @@ function ChatWithNotes() {
   // The question appears in the chat before FastAPI responds.
   const checkNotes = async () => {
     try {
-      const notesResponse = await fetch("http://localhost:8000/notes", {
+      const notesResponse = await fetch(`${API_URL}/notes`, {
         credentials: "include",
       });
 
@@ -112,7 +112,7 @@ function ChatWithNotes() {
       setUploadedNotes(newUploadedNotes);
       try {
         // Send the entire folder to FastAPI
-        const response = await fetch("http://localhost:8000/upload", {
+        const response = await fetch(`${API_URL}/upload`, {
           method: "POST",
           body: ShippingBox,
           credentials: "include",

@@ -1,5 +1,5 @@
 import { Paperclip, ArrowUp } from "lucide-react";
-
+import { API_URL } from "../../config/api";
 type ChatInputProps = {
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -58,7 +58,7 @@ function ChatInput({
       // 4. SEND QUESTION TO FASTAPI
       // ========================================
 
-      const response = await fetch("http://localhost:8000/question_input", {
+      const response = await fetch(`${API_URL}/question_input`, {
         method: "POST",
         credentials: "include",
 

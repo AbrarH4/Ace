@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
+import { API_URL } from "../../config/api";
 type AuthRequiredProps = {
   children: React.ReactNode;
 };
@@ -13,7 +14,7 @@ function AuthRequired({ children }: AuthRequiredProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch("http://localhost:8000/notes", {
+        const response = await fetch(`${API_URL}/notes`, {
           credentials: "include",
         });
 

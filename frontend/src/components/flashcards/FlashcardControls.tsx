@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, RefreshCcw, Download } from "lucide-react";
 import { useState } from "react";
-
+import { API_URL } from "../../config/api";
 type flashcardControlsProps = {
   onFlip: () => void;
   onNext: () => void;
@@ -26,7 +26,7 @@ function FlashcardControls({
   const question = flashcards.map((card) => card.front);
   const answer = flashcards.map((card) => card.back);
   const handleExport = async () => {
-    const response = await fetch("http://localhost:8000/exportflashcard", {
+    const response = await fetch(`${API_URL}/exportflashcard`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

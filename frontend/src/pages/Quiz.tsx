@@ -4,7 +4,7 @@ import QuizViewer from "../components/quiz/QuizViewer";
 import QuizControls from "../components/quiz/QuizControls";
 import { useState } from "react";
 import QuizResults from "../components/quiz/QuizResults";
-
+import { API_URL } from "../config/api";
 type QuizQuestion = {
   question: string;
   options: string[];
@@ -52,7 +52,7 @@ function Quiz() {
     setIsReviewing(true);
   };
   const handleGenerate = async () => {
-    const response = await fetch("http://localhost:8000/notes", {
+    const response = await fetch(`${API_URL}/notes`, {
       credentials: "include",
     });
 
@@ -66,7 +66,7 @@ function Quiz() {
       setIsGenerating(true);
       setIsReviewing(false);
       try {
-        const quizResponse = await fetch("http://localhost:8000/quiz", {
+        const quizResponse = await fetch(`${API_URL}/quiz`, {
           method: "POST",
           credentials: "include",
           headers: {
@@ -87,20 +87,17 @@ function Quiz() {
   const selectedAnswer = selectedAnswers[currentIndex] || "";
   const quizEval = async () => {
     try {
-      const quizEvaluation = await fetch(
-        "http://localhost:8000/quiz/evaluation",
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            quiz: quiz,
-            selectedAnswers: selectedAnswers,
-          }),
+      const quizEvaluation = await fetch(`${API_URL}/quiz/evaluation`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          quiz: quiz,
+          selectedAnswers: selectedAnswers,
+        }),
+      });
 
       if (!quizEvaluation.ok) {
         throw new Error("Failed to evaluate quiz");

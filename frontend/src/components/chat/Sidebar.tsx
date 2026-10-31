@@ -11,6 +11,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { ROUTES } from "../../config/ROUTES";
 import { useCallback, useEffect, useState } from "react";
+import { API_URL } from "../../config/api";
 // @ts-expect-error - CSS imports are handled by the bundler
 import "./Sidebar.css";
 
@@ -34,7 +35,7 @@ function Sidebar() {
     try {
       setLoadingNotes(true);
 
-      const response = await fetch("http://localhost:8000/notes", {
+      const response = await fetch(`${API_URL}/notes`, {
         method: "GET",
         credentials: "include",
       });
@@ -61,7 +62,7 @@ function Sidebar() {
   }, []);
   const handleDelete = async (noteId: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/notes/${noteId}`, {
+      const response = await fetch(`${API_URL}/notes/${noteId}`, {
         method: "DELETE",
         credentials: "include",
       });
