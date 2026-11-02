@@ -1,29 +1,58 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import "./home.css";
 import { ROUTES } from "../../config/ROUTES";
-import { LogOut, Menu, X, CircleUser } from "lucide-react";
-import { useState } from "react";
-import SettingsMenu from "./SettingsMenu";
 import { API_URL } from "../../config/api";
+import { Menu, X, CircleUser } from "lucide-react";
+import { useEffect, useState } from "react";
+import SettingsMenu from "./SettingsMenu";
+import type { AuthStatus } from "./SettingsMenu";
+
 function Navigation_Bar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [auth, setAuth] = useState<AuthStatus>("loading");
+
+  // Re-check the session on every page change
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${API_URL}/auth/profile`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!cancelled) setAuth(response.ok ? "in" : "out");
+      } catch {
+        if (!cancelled) setAuth("out");
+      }
+    };
+
+    checkAuth();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname]);
+
+  // Close the mobile menu after navigating
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/auth/logout
-        `,
-        {
-          method: "POST",
-          credentials: "include",
-        },
-      );
+      const response = await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
 
       if (!response.ok) {
         throw new Error("Logout failed");
       }
 
+      setAuth("out");
       navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -47,18 +76,6 @@ function Navigation_Bar() {
         <NavLink to={ROUTES.QUIZ} className={linkClass}>
           Quiz
         </NavLink>
-
-        <NavLink to="/register" className={linkClass}>
-          Register
-        </NavLink>
-        <NavLink to="/login" className={linkClass}>
-          Login
-        </NavLink>
-
-        <button className="nav-logout" onClick={handleLogout}>
-          <LogOut size={16} />
-          <span>Logout</span>
-        </button>
       </div>
 
       <button
@@ -71,18 +88,20 @@ function Navigation_Bar() {
       </button>
 
       <div className="nav-actions">
-        <NavLink
-          to={ROUTES.PROFILE}
-          className={({ isActive }) =>
-            `nav-settings nav-profile ${isActive ? "active" : ""}`
-          }
-          aria-label="Profile"
-          title="Profile"
-        >
-          <CircleUser size={20} />
-        </NavLink>
+        {auth === "in" && (
+          <NavLink
+            to={ROUTES.PROFILE}
+            className={({ isActive }) =>
+              `nav-settings nav-profile ${isActive ? "active" : ""}`
+            }
+            aria-label="Profile"
+            title="Profile"
+          >
+            <CircleUser size={20} />
+          </NavLink>
+        )}
 
-        <SettingsMenu />
+        <SettingsMenu auth={auth} onLogout={handleLogout} />
       </div>
     </nav>
   );

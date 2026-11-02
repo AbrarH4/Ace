@@ -1,9 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Check } from "lucide-react";
-import { THEMES, applyTheme, getSavedTheme } from "./config/themes";
-import type { ThemeId } from "./config/themes";
+import { Link } from "react-router-dom";
+import { Check, LogIn, LogOut, UserPlus } from "lucide-react";
+import { THEMES, applyTheme, getSavedTheme } from "../home/config/themes";
+import type { ThemeId } from "../home/config/themes";
 
-function SettingsMenu() {
+export type AuthStatus = "loading" | "in" | "out";
+
+type SettingsMenuProps = {
+  auth: AuthStatus;
+  onLogout: () => void;
+};
+
+function SettingsMenu({ auth, onLogout }: SettingsMenuProps) {
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeId>(getSavedTheme());
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -45,6 +53,54 @@ function SettingsMenu() {
 
       {open && (
         <div className="settings-popover" role="menu">
+          {/* ACCOUNT SECTION */}
+          {auth === "out" && (
+            <>
+              <p className="settings-title">Account</p>
+
+              <Link
+                to="/login"
+                className="settings-item"
+                onClick={() => setOpen(false)}
+              >
+                <LogIn size={17} />
+                <span>Login</span>
+              </Link>
+
+              <Link
+                to="/register"
+                className="settings-item"
+                onClick={() => setOpen(false)}
+              >
+                <UserPlus size={17} />
+                <span>Register</span>
+              </Link>
+
+              <div className="settings-divider" />
+            </>
+          )}
+
+          {auth === "in" && (
+            <>
+              <p className="settings-title">Account</p>
+
+              <button
+                type="button"
+                className="settings-item danger"
+                onClick={() => {
+                  setOpen(false);
+                  onLogout();
+                }}
+              >
+                <LogOut size={17} />
+                <span>Logout</span>
+              </button>
+
+              <div className="settings-divider" />
+            </>
+          )}
+
+          {/* ACCENT COLOR SECTION */}
           <p className="settings-title">Accent color</p>
 
           <div className="theme-list">

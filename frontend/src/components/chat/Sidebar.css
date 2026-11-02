@@ -194,3 +194,307 @@
     display: none;
   }
 }
+/* ================================================= */
+/* MOBILE LAYOUT                                      */
+/* ================================================= */
+
+.chat-layout,
+.chat-main {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.auth-required {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* keep the delete popup above everything, including the drawer */
+.delete-modal-overlay {
+  z-index: 1200;
+}
+
+/* hidden on desktop */
+.sidebar-toggle,
+.sidebar-close,
+.sidebar-backdrop {
+  display: none;
+}
+
+@keyframes backdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  /* Hamburger button */
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 900;
+
+    width: 42px;
+    height: 42px;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+
+    background: #1e293b;
+    color: #e2e8f0;
+
+    cursor: pointer;
+  }
+
+  /* leave a strip at the top so the button never covers content */
+  .chat-main {
+    padding-top: 62px;
+  }
+
+  /* Sidebar becomes a slide-in drawer */
+  .chat-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1001;
+
+    width: min(82vw, 300px);
+    height: 100dvh;
+
+    transform: translateX(-100%);
+    transition:
+      transform 0.28s ease,
+      box-shadow 0.28s ease;
+  }
+
+  .chat-sidebar.open {
+    transform: translateX(0);
+    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.5);
+  }
+
+  /* undo the 80px icon-only mode inside the drawer */
+  .sidebar-logo {
+    display: flex;
+  }
+
+  .sidebar-notes {
+    display: block;
+  }
+
+  .sidebar-logo h2 {
+    display: block;
+  }
+
+  .sidebar-link span {
+    display: inline;
+  }
+
+  .sidebar-link {
+    justify-content: flex-start;
+  }
+
+  /* phones have no hover, so always show the delete buttons */
+  .delete-note-btn {
+    opacity: 1;
+  }
+
+  .sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: absolute;
+    top: 12px;
+    right: 12px;
+
+    width: 36px;
+    height: 36px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+
+    cursor: pointer;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    background: rgba(0, 0, 0, 0.55);
+    animation: backdropIn 0.2s ease;
+  }
+
+  /* Header */
+  .chat-header {
+    height: 64px;
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .header-left {
+    min-width: 0;
+    gap: 0.25rem;
+  }
+
+  .header-left h2 {
+    font-size: 1.15rem;
+  }
+
+  .current-file {
+    min-width: 0;
+    font-size: 0.8rem;
+  }
+
+  .current-file span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .upload-btn {
+    flex-shrink: 0;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  /* Messages */
+  .chat-area {
+    padding: 18px 12px;
+  }
+
+  .chat-messages {
+    gap: 14px;
+  }
+
+  .chat-empty {
+    padding: 24px 16px;
+  }
+
+  .message-bubble {
+    max-width: 90%;
+    padding: 12px 14px;
+    font-size: 14.5px;
+    overflow-wrap: anywhere;
+  }
+
+  .assistant-bubble pre,
+  .assistant-bubble table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  /* Input bar */
+  .chat-input-container {
+    padding: 10px 12px;
+  }
+
+  .chat-input-box {
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 16px;
+  }
+
+  .chat-input-box input {
+    min-width: 0;
+  }
+
+  .send-btn {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+  }
+
+  /* iPhones zoom into inputs smaller than 16px */
+  .chat-input-box input,
+  .generation-settings input,
+  .generation-settings select,
+  .quiz-settings input,
+  .quiz-settings select {
+    font-size: 16px;
+  }
+}
+@media (max-width: 700px) {
+  /* chat header: let the file name wrap onto 2 lines */
+  .chat-header {
+    height: auto;
+    min-height: 64px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .current-file span {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* sidebar drawer: let note names wrap too */
+  .sidebar-note {
+    align-items: flex-start;
+  }
+
+  .sidebar-note-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sidebar-note span {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+  }
+}
+@media (max-width: 700px) {
+  /* bring the note names back inside the drawer */
+  .chat-sidebar .sidebar-section-title,
+  .chat-sidebar .no-notes,
+  .chat-sidebar .no-notes span {
+    display: flex !important;
+  }
+
+  .chat-sidebar .sidebar-note-info {
+    display: block !important;
+    flex: 1;
+    min-width: 0;
+    width: auto !important;
+    opacity: 1 !important;
+  }
+
+  .chat-sidebar .sidebar-note-info span {
+    display: block !important;
+    color: #e2e8f0;
+    font-size: 14px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .chat-sidebar .sidebar-note {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .chat-sidebar .delete-note-btn {
+    display: flex !important;
+    flex-shrink: 0;
+  }
+}

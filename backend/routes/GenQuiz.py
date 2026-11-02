@@ -36,17 +36,17 @@ def get_quiz_context(notes,topic=""):
     if topic:
         # Extract keywords and rank notes by relevance to the topic
         keywords = retrieval.keyword(topic)
-        ranking_result = retrieval.Ranking_System(notes=notes, keyword=keywords, question=topic)
+        ranking_result = retrieval.Ranking_System(notes=notes, keywords=keywords, question=topic)
         if not ranking_result:
             return None
-        winning_files, encoded_topic = ranking_result
+        winning_files = ranking_result
 
         # Collect the top relevant chunks from each winning file
         context = ""
         for filename in winning_files:
             if filename in notes:
                 chunks = retrieval.get_relevant_chunks(
-                    notes[filename], encoded_topic
+                    notes[filename], keywords=keywords
                 )
                 context += f"SOURCE: {filename}\n{chunks}\n\n"
         return context if context else None

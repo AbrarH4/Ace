@@ -7,40 +7,53 @@ from backend.database import get_content_db, Note
 from backend.routes  import loader
 
 router = APIRouter()
-@router.post('/upload')
-async def upload_notes(file: list[UploadFile] = File(...), user_id=Depends(get_current_user), db = Depends(get_content_db)):
-    for files in file:
-        content = await files.read()
-        loader.store_notes(files.filename, content)
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB per file
 
-        if files.filename not in loader.Notes:
+
+@router.post("/upload")
+def upload_notes(
+    file: list[UploadFile] = File(...),
+    user_id=Depends(get_current_user),
+    db=Depends(get_content_db),
+):
+    saved = []
+    skipped = []
+
+    for upload in file:
+        size = getattr(upload, "size", None)
+        if size is not None and size > MAX_UPLOAD_BYTES:
+            skipped.append(upload.filename)
+            continue
+
+        content = upload.file.read()
+        text = loader.extract_text(upload.filename, content)
+
+        if not text:
+            skipped.append(upload.filename)
             continue
 
         existing_note = db.execute(
             select(Note).where(
                 Note.user_id == user_id,
-                Note.filename == files.filename
+                Note.filename == upload.filename,
             )
         ).scalar_one_or_none()
 
         if existing_note:
-            existing_note.content = loader.Notes[files.filename]
+            existing_note.content = text
         else:
-            note = Note(
-                user_id=user_id,
-                filename=files.filename,
-                content=loader.Notes[files.filename]
-            )
-            db.add(note)
+            db.add(Note(user_id=user_id, filename=upload.filename, content=text))
+
+        saved.append(upload.filename)
 
     db.commit()
-    
+    return {"saved": saved, "skipped": skipped}
+
+
 @router.get("/notes")
-async def get_notes(user_id = Depends(get_current_user), db = Depends(get_content_db)):
-    result = db.execute(select(Note).where(Note.user_id==user_id))
-    notes = result.scalars().all()
-    
-    return notes
+def get_notes(user_id=Depends(get_current_user), db=Depends(get_content_db)):
+    result = db.execute(select(Note).where(Note.user_id == user_id))
+    return result.scalars().all()
         
 
 @router.delete("/notes/{note_id}")

@@ -7,6 +7,8 @@ import {
   GraduationCap,
   FileText,
   Trash2,
+  Menu,
+  X,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { ROUTES } from "../../config/ROUTES";
@@ -25,6 +27,7 @@ type Note = {
 function Sidebar() {
   const location = useLocation();
 
+  const [open, setOpen] = useState(false);
   const [uploadedNotes, setUploadedNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(true);
   const [isDeleteClicked, setIsDeleteClicked] = useState(false);
@@ -59,6 +62,7 @@ function Sidebar() {
       setLoadingNotes(false);
     }
   }, []);
+
   const handleDelete = async (noteId: number) => {
     try {
       const response = await fetch(`${API_URL}/notes/${noteId}`, {
@@ -82,132 +86,155 @@ function Sidebar() {
     }
   };
 
-  // Load notes when Sidebar appears
-  useEffect(() => {
-    loadNotes();
-  }, [loadNotes]);
-
-  // Reload notes whenever the user navigates
+  // Load notes when the sidebar appears and whenever the user navigates
   useEffect(() => {
     loadNotes();
   }, [location.pathname, loadNotes]);
 
+  // Close the mobile drawer after navigating to another page
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
   return (
-    <aside className="chat-sidebar">
-      {/* =================================
-          LOGO
-      ================================= */}
-      <div className="sidebar-logo">
-        <GraduationCap size={32} />
-        <h2>ACE</h2>
-      </div>
+    <>
+      {/* Hamburger button (phones only) */}
+      <button
+        type="button"
+        className="sidebar-toggle"
+        onClick={() => setOpen(true)}
+        aria-label="Open menu"
+      >
+        <Menu size={22} />
+      </button>
 
-      {/* =================================
-          MAIN NAVIGATION
-      ================================= */}
-      <nav className="sidebar-nav">
-        <Link
-          to={ROUTES.HOME}
-          className={
-            location.pathname === "/" ? "sidebar-link active" : "sidebar-link"
-          }
+      {/* Dimmed backdrop behind the open drawer (phones only) */}
+      {open && (
+        <div className="sidebar-backdrop" onClick={() => setOpen(false)} />
+      )}
+
+      <aside className={`chat-sidebar ${open ? "open" : ""}`}>
+        <button
+          type="button"
+          className="sidebar-close"
+          onClick={() => setOpen(false)}
+          aria-label="Close menu"
         >
-          <Home size={20} />
-          <span>Home</span>
-        </Link>
+          <X size={20} />
+        </button>
 
-        <Link
-          to={ROUTES.CHAT}
-          className={
-            location.pathname === "/chat"
-              ? "sidebar-link active"
-              : "sidebar-link"
-          }
-        >
-          <MessageSquare size={20} />
-          <span>Chat</span>
-        </Link>
-
-        <Link
-          to={ROUTES.FLASHCARDS}
-          className={
-            location.pathname === "/flashcards"
-              ? "sidebar-link active"
-              : "sidebar-link"
-          }
-        >
-          <Zap size={20} />
-          <span>Flashcards</span>
-        </Link>
-
-        <Link
-          to={ROUTES.QUIZ}
-          className={
-            location.pathname === "/quiz"
-              ? "sidebar-link active"
-              : "sidebar-link"
-          }
-        >
-          <Target size={20} />
-          <span>Quiz</span>
-        </Link>
-      </nav>
-
-      {/* =================================
-          UPLOADED NOTES
-      ================================= */}
-      <div className="sidebar-notes">
-        <div className="sidebar-section-title">
-          <span>Your Notes</span>
+        {/* =================================
+            LOGO
+        ================================= */}
+        <div className="sidebar-logo">
+          <GraduationCap size={32} />
+          <h2>ACE</h2>
         </div>
 
-        {loadingNotes ? (
-          <div className="no-notes">
-            <FileText size={18} />
-            <span>Loading notes...</span>
-          </div>
-        ) : uploadedNotes.length === 0 ? (
-          <div className="no-notes">
-            <FileText size={18} />
-            <span>No notes uploaded</span>
-          </div>
-        ) : (
-          <div className="notes-list">
-            {uploadedNotes.map((note) => (
-              <div className="sidebar-note" key={note.id}>
-                <FileText size={16} />
+        {/* =================================
+            MAIN NAVIGATION
+        ================================= */}
+        <nav className="sidebar-nav">
+          <Link
+            to={ROUTES.HOME}
+            className={
+              location.pathname === "/" ? "sidebar-link active" : "sidebar-link"
+            }
+          >
+            <Home size={20} />
+            <span>Home</span>
+          </Link>
 
-                <div className="sidebar-note-info">
-                  <span title={note.filename}>
-                    {note.filename.split("/")[1]}
-                  </span>
+          <Link
+            to={ROUTES.CHAT}
+            className={
+              location.pathname === "/chat"
+                ? "sidebar-link active"
+                : "sidebar-link"
+            }
+          >
+            <MessageSquare size={20} />
+            <span>Chat</span>
+          </Link>
+
+          <Link
+            to={ROUTES.FLASHCARDS}
+            className={
+              location.pathname === "/flashcards"
+                ? "sidebar-link active"
+                : "sidebar-link"
+            }
+          >
+            <Zap size={20} />
+            <span>Flashcards</span>
+          </Link>
+
+          <Link
+            to={ROUTES.QUIZ}
+            className={
+              location.pathname === "/quiz"
+                ? "sidebar-link active"
+                : "sidebar-link"
+            }
+          >
+            <Target size={20} />
+            <span>Quiz</span>
+          </Link>
+        </nav>
+
+        {/* =================================
+            UPLOADED NOTES
+        ================================= */}
+        <div className="sidebar-notes">
+          <div className="sidebar-section-title">
+            <span>Your Notes</span>
+          </div>
+
+          {loadingNotes ? (
+            <div className="no-notes">
+              <FileText size={18} />
+              <span>Loading notes...</span>
+            </div>
+          ) : uploadedNotes.length === 0 ? (
+            <div className="no-notes">
+              <FileText size={18} />
+              <span>No notes uploaded</span>
+            </div>
+          ) : (
+            <div className="notes-list">
+              {uploadedNotes.map((note) => (
+                <div className="sidebar-note" key={note.id}>
+                  <FileText size={16} />
+
+                  <div className="sidebar-note-info">
+                    <span title={note.filename}>
+                      {note.filename.split("/").pop()}
+                    </span>
+                  </div>
+
+                  <button
+                    className="delete-note-btn"
+                    onClick={() => {
+                      setSelectedNote(note);
+                      setIsDeleteClicked(true);
+                    }}
+                    title="Delete note"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-                <button
-                  className="delete-note-btn"
-                  onClick={() => {
-                    setSelectedNote(note);
-                    setIsDeleteClicked(true);
-                  }}
-                  title="Delete note"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* =================================
-          BOTTOM SETTINGS
-      ================================= */}
-      <div className="sidebar-bottom">
-        <button className="sidebar-link">
-          <Settings size={20} />
-          <span>Settings</span>
-        </button>
-      </div>
+        <div className="sidebar-bottom">
+          <button className="sidebar-link">
+            <Settings size={20} />
+            <span>Settings</span>
+          </button>
+        </div>
+      </aside>
 
       {isDeleteClicked && selectedNote && (
         <div className="delete-modal-overlay">
@@ -239,7 +266,7 @@ function Sidebar() {
           </div>
         </div>
       )}
-    </aside>
+    </>
   );
 }
 

@@ -1,5 +1,30 @@
 html,
 body,
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+video,
+svg,
+textarea,
+input,
+select {
+  max-width: 100%;
+}
+
+.profile-page *,
+main * {
+  min-width: 0;
+}
 #root {
   background-color: #0d0e12;
   min-height: 100%;

@@ -167,3 +167,21 @@ def presentation_loader(filecontent):
                     if paragraph.text:
                         lines.append(paragraph.text)
     return "\n".join(lines).strip()
+
+def extract_text(filename, filecontent):
+    
+    extension = Path(filename).suffix.lower()
+
+    try:
+        if extension == ".pdf":
+            return pdf_loader(filecontent)
+        if extension == ".docx":
+            return docx_loader(filecontent)
+        if extension == ".pptx":
+            return presentation_loader(filecontent)
+        if extension in (".txt", ".md"):
+            return filecontent.decode("utf-8", errors="ignore").strip()
+    except Exception as e:
+        print(f"Skipping unreadable file {filename}: {e}")
+
+    return ""
