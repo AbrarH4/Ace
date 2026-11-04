@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from backend.auth.dependencies import get_current_user
 from backend.routes.provider import generateFlashcard
-from backend.database import get_content_db, Note
+from backend.database import get_content_db, Note, FlashcardSet 
 from pydantic import BaseModel
-from sqlalchemy import select 
+from sqlalchemy import select , delete
 import json
 
 Flashcard_router = APIRouter()
@@ -28,7 +28,15 @@ async def generate_flashcards(
     context=contexts,
     flashcard_count=request.count,
     topic=request.topic
-)
+)   
+    if responseFlashcard:
+        try:
+            flashcard_row = FlashcardSet(user_id = user_id, title = request.topic.strip() or "ALL MY SETS", topic = request.topic or "ALL MY SETS", card_count = request.count, cards = responseFlashcard)
+            db.add(flashcard_row)
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            print(e)    
     return responseFlashcard
 
 
@@ -58,3 +66,36 @@ def export_flashcard(flashcards:flashcard_export): #  WE NEED THE LISTS OF QUEST
         "Content-Disposition": 'attachment; filename="ace_flashcards.txt"'
     }
 ) # FRONTEND WILL RECEIVE THIS AND LET THE USER EXPORT THE FLASHCARDS
+    
+    
+@Flashcard_router.get("/flashcards-set")
+def list_flashcard(user_id = Depends(get_current_user), db = Depends(get_content_db)):
+   
+    rows = db.execute(select(FlashcardSet.id, FlashcardSet.title, FlashcardSet.card_count, FlashcardSet.created_at).where(FlashcardSet.user_id == user_id).order_by(FlashcardSet.created_at.desc())).all()
+    return [
+        
+        {"id": row.id, "title":row.title, "card_count": row.card_count, "created_at": row.created_at}
+        for row in rows
+    ]    
+    
+@Flashcard_router.get("/flashcards-set/{set_id}")
+def open_flashcard(set_id:int, user_id = Depends(get_current_user), db = Depends(get_content_db)):
+    
+    flashcard_result = db.execute(select(FlashcardSet.cards).where(FlashcardSet.id == set_id, FlashcardSet.user_id == user_id)).scalar_one_or_none()
+    if flashcard_result is None:
+        raise HTTPException(status_code=404, detail="FLASHCARDS NOT FOUND!")
+    return flashcard_result
+        
+        
+@Flashcard_router.delete("/flashcards-set/{set_id}")
+def delete_flashcard(set_id: int, user_id=Depends(get_current_user), db=Depends(get_content_db)):
+    result = db.execute(delete(FlashcardSet).where(user_id == FlashcardSet.user_id, set_id == FlashcardSet.id))
+    if result.rowcount == 0:
+        raise HTTPException(
+            status_code= 404,
+            detail = 'Set not found!'
+            )
+        
+    db.commit()
+    return "SET DELETED SUCCESSFULLY."
+    

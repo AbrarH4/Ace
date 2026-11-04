@@ -2,9 +2,10 @@ import Sidebar from "../components/chat/Sidebar";
 import QuizHeader from "../components/quiz/QuizHeader";
 import QuizViewer from "../components/quiz/QuizViewer";
 import QuizControls from "../components/quiz/QuizControls";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import QuizResults from "../components/quiz/QuizResults";
 import { API_URL } from "../config/api";
+
 type QuizQuestion = {
   question: string;
   options: string[];
@@ -17,6 +18,7 @@ type QuizResult = {
   correct_answer: string;
   explanation: string;
 };
+
 function Quiz() {
   const [topic, setTopic] = useState("");
   const [questionCount, setQuestionCount] = useState(10);
@@ -28,10 +30,31 @@ function Quiz() {
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [__, setIsSubmitted] = useState(false);
+  const [isNotesUploaded, setIsNotesUploaded] = useState(false);
   // const score = results.filter((result) => result.correct).length;
   const [isReviewing, setIsReviewing] = useState(false);
   const hasQuiz = quiz.length > 0;
+  const checkNotes = async () => {
+    try {
+      const notesResponse = await fetch(`${API_URL}/notes`, {
+        credentials: "include",
+      });
 
+      if (!notesResponse.ok) {
+        throw new Error("Failed to fetch notes");
+      }
+
+      const notes = await notesResponse.json();
+
+      setIsNotesUploaded(notes.length > 0);
+    } catch (error) {
+      console.error("Failed to load notes:", error);
+      setIsNotesUploaded(false);
+    }
+  };
+  useEffect(() => {
+    checkNotes();
+  });
   const handleSelectAnswer = (answer: string) => {
     setSelectedAnswers((previous) => {
       const updated = [...previous];
@@ -121,6 +144,7 @@ function Quiz() {
           hasQuiz={hasQuiz}
           Generating={isGenerating}
           handleGenerate={handleGenerate}
+          isNotesUploaded={isNotesUploaded}
         />
         {quiz.length === 0 ? (
           <div className="quiz-empty">

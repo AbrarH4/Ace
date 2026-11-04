@@ -25,40 +25,45 @@ function FlashcardControls({
   const question = flashcards.map((card) => card.front);
   const answer = flashcards.map((card) => card.back);
   const handleExport = async () => {
-    const response = await fetch(`${API_URL}/exportflashcard`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        question: question,
-        answer: answer,
-      }),
-    });
-    if (!response.ok) {
-      throw new Error("Request failed");
-    }
-    const w = window as any;
-    const data = await response.blob();
-    if (w.showSaveFilePicker) {
-      const showSaveFilePicker = await w.showSaveFilePicker({
-        suggestedName: "ExportedFlashcards.txt",
+    try {
+      const response = await fetch(`${API_URL}/exportflashcard`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          question: question,
+          answer: answer,
+        }),
       });
-      const fileHandle = await showSaveFilePicker();
-      const writable = await fileHandle.createWritable();
-      await writable.write(data);
-      await writable.close();
-    } else {
-      const url = URL.createObjectURL(data);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "ExportFlashcards.txt";
-      link.click();
-      URL.revokeObjectURL(url);
+      if (!response.ok) {
+        throw new Error("Request failed");
+      }
+
+      const data = await response.blob();
+      const w = window as any;
+
+      if (w.showSaveFilePicker) {
+        const fileHandle = await w.showSaveFilePicker({
+          suggestedName: "ExportedFlashcards.txt",
+        });
+        const writable = await fileHandle.createWritable();
+        await writable.write(data);
+        await writable.close();
+      } else {
+        const url = URL.createObjectURL(data);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "ExportedFlashcards.txt";
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      // Cancelling the save dialog also lands here, which is fine
+      console.error("Export failed:", error);
     }
   };
-
   return (
     <section className="flashcard-controls">
       <div className="card-navigation">

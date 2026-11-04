@@ -7,6 +7,7 @@ import {
   GraduationCap,
   FileText,
   Trash2,
+  Layers3,
   Menu,
   X,
 } from "lucide-react";
@@ -24,6 +25,13 @@ type Note = {
   created_at: string;
 };
 
+type FlashcardSetItem = {
+  id: number;
+  title: string;
+  card_count: number;
+  created_at: string;
+};
+
 function Sidebar() {
   const location = useLocation();
 
@@ -32,6 +40,13 @@ function Sidebar() {
   const [loadingNotes, setLoadingNotes] = useState(true);
   const [isDeleteClicked, setIsDeleteClicked] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [flashSets, setFlashSets] = useState<FlashcardSetItem[]>([]);
+
+  // Which set is open right now? The Flashcards page keeps it in the address (?set=3)
+  const activeSetId =
+    location.pathname === "/flashcards"
+      ? new URLSearchParams(location.search).get("set")
+      : null;
 
   const loadNotes = useCallback(async () => {
     try {
@@ -63,6 +78,26 @@ function Sidebar() {
     }
   }, []);
 
+  const loadSets = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/flashcards-set`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        setFlashSets([]);
+        return;
+      }
+
+      const data: FlashcardSetItem[] = await response.json();
+      setFlashSets(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load flashcard sets:", error);
+      setFlashSets([]);
+    }
+  }, []);
+
   const handleDelete = async (noteId: number) => {
     try {
       const response = await fetch(`${API_URL}/notes/${noteId}`, {
@@ -86,15 +121,25 @@ function Sidebar() {
     }
   };
 
-  // Load notes when the sidebar appears and whenever the user navigates
+  // Load notes and sets when the sidebar appears and whenever the user changes page
   useEffect(() => {
     loadNotes();
-  }, [location.pathname, loadNotes]);
+    loadSets();
+  }, [location.pathname, loadNotes, loadSets]);
 
-  // Close the mobile drawer after navigating to another page
+  // The Flashcards page announces "the list of sets changed" (after generating
+  // or deleting). When we hear it, we reload the list.
+  useEffect(() => {
+    window.addEventListener("flashcard-sets-changed", loadSets);
+    return () => {
+      window.removeEventListener("flashcard-sets-changed", loadSets);
+    };
+  }, [loadSets]);
+
+  // Close the mobile drawer after navigating (including switching sets)
   useEffect(() => {
     setOpen(false);
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   return (
     <>
@@ -183,6 +228,35 @@ function Sidebar() {
         </nav>
 
         {/* =================================
+            FLASHCARD SETS
+        ================================= */}
+        {flashSets.length > 0 &&
+          location.pathname !== ROUTES.CHAT &&
+          location.pathname !== ROUTES.QUIZ && (
+            <div className="sidebar-sets">
+              <div className="sidebar-section-title">
+                <span>Flashcard sets</span>
+              </div>
+
+              <div className="notes-list">
+                {flashSets.slice(0, 15).map((item) => (
+                  <Link
+                    key={item.id}
+                    to={`${ROUTES.FLASHCARDS}?set=${item.id}`}
+                    className={`sidebar-set ${
+                      String(item.id) === activeSetId ? "active" : ""
+                    }`}
+                    title={item.title}
+                  >
+                    <Layers3 size={16} />
+                    <span>{item.title}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+        {/* =================================
             UPLOADED NOTES
         ================================= */}
         <div className="sidebar-notes">
@@ -228,6 +302,9 @@ function Sidebar() {
           )}
         </div>
 
+        {/* =================================
+            BOTTOM SETTINGS
+        ================================= */}
         <div className="sidebar-bottom">
           <button className="sidebar-link">
             <Settings size={20} />
@@ -236,6 +313,8 @@ function Sidebar() {
         </div>
       </aside>
 
+      {/* Modal lives OUTSIDE the <aside>, so the drawer's slide animation
+          can't trap it inside the drawer */}
       {isDeleteClicked && selectedNote && (
         <div className="delete-modal-overlay">
           <div className="delete-modal">

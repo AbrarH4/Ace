@@ -3,8 +3,14 @@ type QuizHeaderProps = {
   hasQuiz: boolean;
   Generating: boolean;
   handleGenerate: () => void;
+  isNotesUploaded: boolean;
 };
-function QuizHeader({ hasQuiz, Generating, handleGenerate }: QuizHeaderProps) {
+function QuizHeader({
+  hasQuiz,
+  Generating,
+  handleGenerate,
+  isNotesUploaded,
+}: QuizHeaderProps) {
   return (
     <header className="flashcard-header">
       <div className="header-left">
@@ -12,7 +18,11 @@ function QuizHeader({ hasQuiz, Generating, handleGenerate }: QuizHeaderProps) {
 
         <div className="current-file">
           <FileText size={16} />
-          <span>No document selected</span>
+          {isNotesUploaded ? (
+            <span>DOCUMENT UPLOADED</span>
+          ) : (
+            <span>NO DOCUMENT UPLOADED</span>
+          )}
         </div>
       </div>
 

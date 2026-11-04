@@ -2778,3 +2778,165 @@ body {
   outline: 2px solid #2dd4bf;
   outline-offset: 3px;
 }
+/* ---------- Saved flashcard sets ---------- */
+
+.flashcard-error {
+  flex-shrink: 0;
+  width: min(calc(100% - 32px), 620px);
+  margin: 12px auto 0;
+  padding: 12px 14px;
+
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 12px;
+
+  background: rgba(239, 68, 68, 0.08);
+  color: #fecaca;
+
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* keep the screen centered when it fits, scrollable from the top when it doesn't */
+.flashcard-empty {
+  justify-content: flex-start;
+}
+
+.flashcard-empty::before,
+.flashcard-empty::after {
+  content: "";
+  flex: 1 0 0;
+}
+
+.saved-sets {
+  width: min(100%, 620px);
+  margin-top: 32px;
+  text-align: left;
+}
+
+.saved-sets h3 {
+  margin: 0 0 12px;
+
+  color: #94a3b8;
+
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.saved-sets-list {
+  margin: 0;
+  padding: 0;
+
+  list-style: none;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saved-set {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.saved-set-open {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px 14px;
+
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+
+  background: rgba(30, 41, 59, 0.8);
+  color: #e2e8f0;
+
+  font-family: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.saved-set-open svg {
+  flex-shrink: 0;
+  color: #a5b4fc;
+}
+
+.saved-set-open:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(129, 140, 248, 0.4);
+  transform: translateY(-1px);
+}
+
+.saved-set-info {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.saved-set-info strong {
+  overflow: hidden;
+
+  font-size: 14px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-set-info small {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.saved-set-delete {
+  width: 44px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 12px;
+
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.saved-set-delete:hover {
+  background: rgba(239, 68, 68, 0.09);
+  border-color: rgba(248, 113, 113, 0.32);
+  color: #fecaca;
+}
+
+@media (max-width: 520px) {
+  /* keep the existing top-aligned layout on phones */
+  .flashcard-empty::before,
+  .flashcard-empty::after {
+    display: none;
+  }
+
+  .saved-sets {
+    margin-top: 24px;
+  }
+}
