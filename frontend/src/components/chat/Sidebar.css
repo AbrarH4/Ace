@@ -498,55 +498,159 @@
     flex-shrink: 0;
   }
 }
+/* =========================================================
+   SIDEBAR HISTORY LIST (quizzes / flashcard sets)
+========================================================= */
+
 .sidebar-sets {
   flex-shrink: 0;
-  max-height: 32%;
+  max-height: 38%;
   overflow-y: auto;
-  padding: 8px 12px 4px;
+
+  margin-top: 6px;
+  padding: 14px 12px 6px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-sets .sidebar-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 10px 10px;
+}
+
+.sidebar-count {
+  min-width: 22px;
+  padding: 2px 8px;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.08);
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: center;
 }
 
 .sidebar-set {
+  position: relative;
+
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 
-  padding: 9px 12px;
+  padding: 8px 10px;
 
-  border-radius: 8px;
+  border-radius: 10px;
 
   color: #94a3b8;
-  font-size: 14px;
   text-decoration: none;
+
+  transition: background 0.18s ease;
+}
+
+.sidebar-set-icon {
+  flex-shrink: 0;
+
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
 
   transition:
     background 0.18s ease,
     color 0.18s ease;
 }
 
-.sidebar-set span {
+.sidebar-set-text {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sidebar-set-text strong {
   overflow: hidden;
+
+  color: #cbd5e1;
+
+  font-size: 13.5px;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sidebar-set svg {
-  flex-shrink: 0;
+.sidebar-set-text small {
+  color: #64748b;
+  font-size: 11.5px;
 }
 
 .sidebar-set:hover {
-  background: rgba(99, 102, 241, 0.12);
-  color: white;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-set:hover .sidebar-set-icon {
+  color: var(--ace-accent-light, #a5b4fc);
 }
 
 .sidebar-set.active {
-  background: rgba(99, 102, 241, 0.18);
-  color: #818cf8;
-  font-weight: 600;
+  background: rgba(var(--ace-accent-rgb, 99, 102, 241), 0.14);
 }
 
-/* the narrow icon-only sidebar (701-900px) has no room for set names */
+.sidebar-set.active::before {
+  content: "";
+
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+
+  width: 3px;
+
+  border-radius: 0 3px 3px 0;
+
+  background: var(--ace-accent, #6366f1);
+}
+
+.sidebar-set.active .sidebar-set-icon {
+  background: rgba(var(--ace-accent-rgb, 99, 102, 241), 0.22);
+  color: var(--ace-accent-light, #a5b4fc);
+}
+
+.sidebar-set.active .sidebar-set-text strong {
+  color: #f8fafc;
+}
+
+.sidebar-sets::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-sets::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+/* the narrow icon-only sidebar (701-900px) has no room for the list */
 @media (max-width: 900px) and (min-width: 701px) {
   .sidebar-sets {
     display: none;
+  }
+}
+
+/* bigger touch targets on phones */
+@media (max-width: 700px) {
+  .sidebar-set {
+    min-height: 52px;
   }
 }

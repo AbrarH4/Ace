@@ -45,7 +45,48 @@ class FlashcardSet(Base):
         default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         nullable=False,
     )
+    
+class QuizSet(Base):
+    __tablename__ = "quiz_set"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(nullable=False)
+    topic: Mapped[str] = mapped_column(nullable=False, default="")
+    question_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    questions: Mapped[Any] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        nullable=False,
+    )
+    
+class QuizAttempts(Base):
+    __tablename__ = "quiz_attempts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    quiz_id: Mapped[int] = mapped_column(
+        ForeignKey("quiz_attempts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    score: Mapped[int] = mapped_column(nullable=False)
+    total: Mapped[int] = mapped_column(nullable=False)
+    answers: Mapped[Any] = mapped_column(JSON, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        nullable=False,
+    )
 def get_db():
     db = SessionLocal()
 

@@ -8,6 +8,7 @@ import {
   FileText,
   Trash2,
   Layers3,
+  BrainCircuit,
   Menu,
   X,
 } from "lucide-react";
@@ -32,6 +33,13 @@ type FlashcardSetItem = {
   created_at: string;
 };
 
+type QuizItem = {
+  id: number;
+  title: string;
+  question_count: number;
+  created_at: string;
+};
+
 function Sidebar() {
   const location = useLocation();
 
@@ -41,12 +49,16 @@ function Sidebar() {
   const [isDeleteClicked, setIsDeleteClicked] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [flashSets, setFlashSets] = useState<FlashcardSetItem[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
 
-  // Which set is open right now? The Flashcards page keeps it in the address (?set=3)
+  // On the quiz page we show quizzes; on every other page, flashcard sets
+  const isQuizPage = location.pathname === "/quiz";
+
+  // Which item is open right now? The pages keep it in the address
+  const params = new URLSearchParams(location.search);
   const activeSetId =
-    location.pathname === "/flashcards"
-      ? new URLSearchParams(location.search).get("set")
-      : null;
+    location.pathname === "/flashcards" ? params.get("set") : null;
+  const activeQuizId = isQuizPage ? params.get("quiz") : null;
 
   const loadNotes = useCallback(async () => {
     try {
@@ -98,6 +110,26 @@ function Sidebar() {
     }
   }, []);
 
+  const loadQuizzes = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/quizzes`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        setQuizzes([]);
+        return;
+      }
+
+      const data: QuizItem[] = await response.json();
+      setQuizzes(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load quizzes:", error);
+      setQuizzes([]);
+    }
+  }, []);
+
   const handleDelete = async (noteId: number) => {
     try {
       const response = await fetch(`${API_URL}/notes/${noteId}`, {
@@ -121,22 +153,29 @@ function Sidebar() {
     }
   };
 
-  // Load notes and sets when the sidebar appears and whenever the user changes page
+  // Load the notes, plus only the list that is visible on this page
   useEffect(() => {
     loadNotes();
-    loadSets();
-  }, [location.pathname, loadNotes, loadSets]);
 
-  // The Flashcards page announces "the list of sets changed" (after generating
-  // or deleting). When we hear it, we reload the list.
+    if (isQuizPage) {
+      loadQuizzes();
+    } else {
+      loadSets();
+    }
+  }, [location.pathname, isQuizPage, loadNotes, loadSets, loadQuizzes]);
+
+  // The pages announce "the list changed" after generating or deleting.
+  // When we hear it, we reload that list.
   useEffect(() => {
     window.addEventListener("flashcard-sets-changed", loadSets);
+    window.addEventListener("quizzes-changed", loadQuizzes);
     return () => {
       window.removeEventListener("flashcard-sets-changed", loadSets);
+      window.removeEventListener("quizzes-changed", loadQuizzes);
     };
-  }, [loadSets]);
+  }, [loadSets, loadQuizzes]);
 
-  // Close the mobile drawer after navigating (including switching sets)
+  // Close the mobile drawer after navigating (including switching items)
   useEffect(() => {
     setOpen(false);
   }, [location.pathname, location.search]);
@@ -228,33 +267,68 @@ function Sidebar() {
         </nav>
 
         {/* =================================
-            FLASHCARD SETS
+            HISTORY: quizzes on the quiz page,
+            flashcard sets everywhere else
         ================================= */}
-        {flashSets.length > 0 &&
-          location.pathname !== ROUTES.CHAT &&
-          location.pathname !== ROUTES.QUIZ && (
-            <div className="sidebar-sets">
-              <div className="sidebar-section-title">
-                <span>Flashcard sets</span>
-              </div>
+        {isQuizPage
+          ? quizzes.length > 0 && (
+              <div className="sidebar-sets">
+                <div className="sidebar-section-title">
+                  <span>Quizzes</span>
+                  <span className="sidebar-count">{quizzes.length}</span>
+                </div>
 
-              <div className="notes-list">
-                {flashSets.slice(0, 15).map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`${ROUTES.FLASHCARDS}?set=${item.id}`}
-                    className={`sidebar-set ${
-                      String(item.id) === activeSetId ? "active" : ""
-                    }`}
-                    title={item.title}
-                  >
-                    <Layers3 size={16} />
-                    <span>{item.title}</span>
-                  </Link>
-                ))}
+                <div className="notes-list">
+                  {quizzes.slice(0, 15).map((item) => (
+                    <Link
+                      key={item.id}
+                      to={`${ROUTES.QUIZ}?quiz=${item.id}`}
+                      className={`sidebar-set ${
+                        String(item.id) === activeQuizId ? "active" : ""
+                      }`}
+                      title={item.title}
+                    >
+                      <span className="sidebar-set-icon">
+                        <BrainCircuit size={16} />
+                      </span>
+                      <span className="sidebar-set-text">
+                        <strong>{item.title}</strong>
+                        <small>{item.question_count} questions</small>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          : flashSets.length > 0 && (
+              <div className="sidebar-sets">
+                <div className="sidebar-section-title">
+                  <span>Flashcard sets</span>
+                  <span className="sidebar-count">{flashSets.length}</span>
+                </div>
+
+                <div className="notes-list">
+                  {flashSets.slice(0, 15).map((item) => (
+                    <Link
+                      key={item.id}
+                      to={`${ROUTES.FLASHCARDS}?set=${item.id}`}
+                      className={`sidebar-set ${
+                        String(item.id) === activeSetId ? "active" : ""
+                      }`}
+                      title={item.title}
+                    >
+                      <span className="sidebar-set-icon">
+                        <Layers3 size={16} />
+                      </span>
+                      <span className="sidebar-set-text">
+                        <strong>{item.title}</strong>
+                        <small>{item.card_count} cards</small>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
 
         {/* =================================
             UPLOADED NOTES
