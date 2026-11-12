@@ -3,12 +3,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from dotenv import load_dotenv
-from sqlalchemy import DateTime, UniqueConstraint, create_engine, select, ForeignKey, JSON
+from sqlalchemy import DateTime, UniqueConstraint, create_engine, select, ForeignKey, JSON, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from datetime import timezone
 BASE_DIR = Path(__file__).resolve().parent
 
 load_dotenv()
+def utc_now():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 DATABASE_URL = os.getenv("DATABASE_KEY")
 if not DATABASE_URL:
@@ -104,7 +106,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.now,
+        default=utc_now,
         nullable=False
     )
 
@@ -118,7 +120,7 @@ class Note(Base):
     content: Mapped[str] = mapped_column(nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
-        default=datetime.now,
+        default= utc_now,
         nullable=False
     )
     __table_args__ = (
@@ -144,6 +146,47 @@ def get_user_notes(db, user_id):
         note.filename: note.content
         for note in notes
     }
+class Conversation(Base):
+    __tablename__ = "conversations"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    summarized_upto: Mapped[int | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        onupdate=utc_now,
+        nullable=False,
+    )
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    conversation_id: Mapped[int] = mapped_column(
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        nullable=False,
+    )
+    
 
 Base.metadata.create_all(bind=engine)

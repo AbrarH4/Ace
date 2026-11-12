@@ -17,24 +17,12 @@ from backend.routes.config import PROVIDERS
 
 # Store the last 5 conversation turns (each turn is a (user_msg, assistant_msg)
 # pair). deque with maxlen automatically evicts the oldest turn when full.
-chat_history = deque(maxlen=5)
 
 
-def turn_to_history(question, answer):
-    """Append a completed question-answer pair to the conversation history.
-
-    Args:
-        question: The user's question text.
-        answer: The assistant's answer text.
-    """
-    turn = (
-        {"role": "user", "content": question},
-        {"role": "assistant", "content": answer},
-    )
-    chat_history.append(turn)
 
 
-def get_messages(system_prompt):
+
+def get_messages(system_prompt, history):
     """Build a full OpenAI messages list from the system prompt and history.
 
     Prepends the system prompt then interleaves the stored conversation turns
@@ -47,12 +35,12 @@ def get_messages(system_prompt):
         A list of {"role": ..., "content": ...} dicts ready for the API.
     """
     messages = [{"role": "system", "content": system_prompt}]
-    for turn in chat_history:
+    for turn in history:
         messages.extend(turn)  # Each turn is a (user_dict, assistant_dict) tuple
     return messages
 
 
-def GenerateAnswer(question, context):
+def GenerateAnswer(question, context, history= [None]):
     """Generate a study-assistant answer grounded in the retrieved note context.
 
     Providers are tried in order, the first successful response is returned and
@@ -99,9 +87,10 @@ def GenerateAnswer(question, context):
         "- No '**bold**' inside headers or bullets.\n\n"
         "Do not fabricate. Do not use outside knowledge."
     )
-    messages = get_messages(system_prompt)
-    user_content = f"QUESTION:\n{question}\n\nNOTEBOOK CONTEXT:\n{context}"
-    messages.append({"role": "user", "content": user_content})
+    messages = get_messages(system_prompt, history)
+    
+    # user_content = f"QUESTION:\n{question}\n\nNOTEBOOK CONTEXT:\n{context}"
+    # messages.append({"role": "user", "content": user_content})
 
     # Try each configured provider in priority order
     for provider in PROVIDERS:
@@ -118,13 +107,13 @@ def GenerateAnswer(question, context):
                 temperature=0.1,  # Low temperature for factual, consistent answers
             )
             print(f"[SUCCESS] {provider['name']}")
-            turn_to_history(question, response.choices[0].message.content)
+            
             return response.choices[0].message.content
         except Exception as error:
             print(f"Warning: {provider['name']} failed: {error}")
             continue
 
-    return "CRITICAL FAILURE: All providers exhausted."
+    return None
 
 
 def GenerateQuiz(context, quiz_count=5, quiz_type="mixed", difficulty=None, topic=None):
