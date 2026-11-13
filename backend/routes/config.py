@@ -28,7 +28,7 @@ PROVIDERS = [
         "name": "Groq Cloud",
         "url": "https://api.groq.com/openai/v1",
         "key": os.getenv("GROQ_API_KEY"),
-        "model": "llama-3.3-70b-versatile",
+        "model": "openai/gpt-oss-120b"
     },
     {
         "name": "OpenRouter Free",

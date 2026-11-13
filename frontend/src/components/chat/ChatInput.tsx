@@ -1,8 +1,11 @@
 import { Paperclip, ArrowUp } from "lucide-react";
 import { API_URL } from "../../config/api";
+
 type ChatInputProps = {
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  conversationId: number | null;
+  onConversationId: (id: number) => void;
   addUserMessage: (message: string) => void;
   addAssistantMessage: (message: string) => void;
 };
@@ -10,6 +13,8 @@ type ChatInputProps = {
 function ChatInput({
   isLoading,
   setIsLoading,
+  conversationId,
+  onConversationId,
   addUserMessage,
   addAssistantMessage,
 }: ChatInputProps) {
@@ -29,35 +34,23 @@ function ChatInput({
       return;
     }
 
-    // Don't allow another question
-    // while ACE is still answering
+    // Don't allow another question while ACE is still answering
     if (isLoading) {
       return;
     }
 
-    // ========================================
-    // 1. SHOW USER QUESTION IMMEDIATELY
-    // ========================================
-
+    // 1. Show the user's question immediately
     addUserMessage(text);
 
-    // ========================================
-    // 2. CLEAR INPUT IMMEDIATELY
-    // ========================================
-
+    // 2. Clear the input immediately
     questionValue.value = "";
 
-    // ========================================
-    // 3. SHOW LOADING ANIMATION
-    // ========================================
-
+    // 3. Show the loading animation
     setIsLoading(true);
 
     try {
-      // ========================================
-      // 4. SEND QUESTION TO FASTAPI
-      // ========================================
-
+      // 4. Send the question, plus the id of the chat it belongs to
+      //    (null for a brand-new chat, the server then creates one)
       const response = await fetch(`${API_URL}/question_input`, {
         method: "POST",
         credentials: "include",
@@ -68,46 +61,39 @@ function ChatInput({
 
         body: JSON.stringify({
           text: text,
+          conversation_id: conversationId,
         }),
       });
 
-      // ========================================
-      // 5. CHECK FOR SERVER ERROR
-      // ========================================
-
+      // 5. If the server refused, show its reason inside the chat
       if (!response.ok) {
-        const errorData = await response.json();
-
+        const errorData = await response.json().catch(() => null);
         console.error("Server error:", errorData);
 
-        throw new Error(`Server Error: ${response.status}`);
+        addAssistantMessage(
+          errorData && typeof errorData.detail === "string"
+            ? errorData.detail
+            : "Sorry, I couldn't process your question. Please try again.",
+        );
+        return;
       }
 
-      // ========================================
-      // 6. GET ACE'S ANSWER
-      // ========================================
-
+      // 6. Show ACE's answer
       const data = await response.json();
-
-      console.log("Server response:", data);
-
-      // ========================================
-      // 7. ADD ACE'S ANSWER TO CHAT
-      // ========================================
-
       addAssistantMessage(data.response);
+
+      // 7. Remember which chat this is
+      if (typeof data.conversation_id === "number") {
+        onConversationId(data.conversation_id);
+      }
     } catch (error) {
       console.error("Fetch failed:", error);
 
-      // Show error inside chat
       addAssistantMessage(
         "Sorry, I couldn't process your question. Please try again.",
       );
     } finally {
-      // ========================================
-      // 8. REMOVE LOADING ANIMATION
-      // ========================================
-
+      // 8. Remove the loading animation
       setIsLoading(false);
     }
   };

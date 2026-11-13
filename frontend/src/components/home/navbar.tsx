@@ -76,6 +76,12 @@ function Navigation_Bar() {
         <NavLink to={ROUTES.QUIZ} className={linkClass}>
           Quiz
         </NavLink>
+        <NavLink
+          to={"https://forms.gle/H9hhadqZw2AzpzsVA"}
+          className={linkClass}
+        >
+          Feedback
+        </NavLink>
       </div>
 
       <button

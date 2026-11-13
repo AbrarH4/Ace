@@ -12,7 +12,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ROUTES } from "../../config/ROUTES";
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../../config/api";
@@ -40,8 +40,22 @@ type QuizItem = {
   created_at: string;
 };
 
+type ChatItem = {
+  id: number;
+  title: string;
+  updated_at: string;
+};
+
+// The server stores times in UTC without a label, so we add "Z" before parsing
+const formatShortDate = (value: string) => {
+  const date = new Date(value.endsWith("Z") ? value : `${value}Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+
 function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
   const [uploadedNotes, setUploadedNotes] = useState<Note[]>([]);
@@ -50,8 +64,10 @@ function Sidebar() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [flashSets, setFlashSets] = useState<FlashcardSetItem[]>([]);
   const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
+  const [chats, setChats] = useState<ChatItem[]>([]);
 
-  // On the quiz page we show quizzes; on every other page, flashcard sets
+  // Which page are we on? The history list changes with the page.
+  const isChatPage = location.pathname === "/chat";
   const isQuizPage = location.pathname === "/quiz";
 
   // Which item is open right now? The pages keep it in the address
@@ -59,6 +75,7 @@ function Sidebar() {
   const activeSetId =
     location.pathname === "/flashcards" ? params.get("set") : null;
   const activeQuizId = isQuizPage ? params.get("quiz") : null;
+  const activeChatId = isChatPage ? params.get("conversation") : null;
 
   const loadNotes = useCallback(async () => {
     try {
@@ -130,6 +147,26 @@ function Sidebar() {
     }
   }, []);
 
+  const loadChats = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/conversations`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        setChats([]);
+        return;
+      }
+
+      const data: ChatItem[] = await response.json();
+      setChats(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load chats:", error);
+      setChats([]);
+    }
+  }, []);
+
   const handleDelete = async (noteId: number) => {
     try {
       const response = await fetch(`${API_URL}/notes/${noteId}`, {
@@ -153,27 +190,65 @@ function Sidebar() {
     }
   };
 
+  const deleteChat = async (chatId: number) => {
+    if (!window.confirm("Delete this chat?")) return;
+
+    try {
+      const response = await fetch(`${API_URL}/conversations/${chatId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete chat: ${response.status}`);
+      }
+
+      setChats((previous) => previous.filter((chat) => chat.id !== chatId));
+
+      // If the deleted chat was open, go back to a blank new chat
+      if (String(chatId) === activeChatId) {
+        navigate(ROUTES.CHAT);
+      }
+    } catch (error) {
+      console.error("Failed to delete chat:", error);
+    }
+  };
+
   // Load the notes, plus only the list that is visible on this page
   useEffect(() => {
     loadNotes();
 
-    if (isQuizPage) {
+    if (isChatPage) {
+      loadChats();
+    } else if (isQuizPage) {
       loadQuizzes();
     } else {
       loadSets();
     }
-  }, [location.pathname, isQuizPage, loadNotes, loadSets, loadQuizzes]);
+  }, [
+    location.pathname,
+    isChatPage,
+    isQuizPage,
+    loadNotes,
+    loadChats,
+    loadQuizzes,
+    loadSets,
+  ]);
 
-  // The pages announce "the list changed" after generating or deleting.
-  // When we hear it, we reload that list.
+  // The pages announce "something changed" after generating, sending or
+  // uploading. When we hear it, we reload that list.
   useEffect(() => {
     window.addEventListener("flashcard-sets-changed", loadSets);
     window.addEventListener("quizzes-changed", loadQuizzes);
+    window.addEventListener("conversations-changed", loadChats);
+    window.addEventListener("notes-changed", loadNotes);
     return () => {
       window.removeEventListener("flashcard-sets-changed", loadSets);
       window.removeEventListener("quizzes-changed", loadQuizzes);
+      window.removeEventListener("conversations-changed", loadChats);
+      window.removeEventListener("notes-changed", loadNotes);
     };
-  }, [loadSets, loadQuizzes]);
+  }, [loadSets, loadQuizzes, loadChats, loadNotes]);
 
   // Close the mobile drawer after navigating (including switching items)
   useEffect(() => {
@@ -267,68 +342,109 @@ function Sidebar() {
         </nav>
 
         {/* =================================
-            HISTORY: quizzes on the quiz page,
+            HISTORY: chats on the chat page, quizzes on the quiz page,
             flashcard sets everywhere else
         ================================= */}
-        {isQuizPage
-          ? quizzes.length > 0 && (
+        {isChatPage
+          ? chats.length > 0 && (
               <div className="sidebar-sets">
                 <div className="sidebar-section-title">
-                  <span>Quizzes</span>
-                  <span className="sidebar-count">{quizzes.length}</span>
+                  <span>Recent chats</span>
+                  <span className="sidebar-count">{chats.length}</span>
                 </div>
 
                 <div className="notes-list">
-                  {quizzes.slice(0, 15).map((item) => (
-                    <Link
-                      key={item.id}
-                      to={`${ROUTES.QUIZ}?quiz=${item.id}`}
-                      className={`sidebar-set ${
-                        String(item.id) === activeQuizId ? "active" : ""
-                      }`}
-                      title={item.title}
-                    >
-                      <span className="sidebar-set-icon">
-                        <BrainCircuit size={16} />
-                      </span>
-                      <span className="sidebar-set-text">
-                        <strong>{item.title}</strong>
-                        <small>{item.question_count} questions</small>
-                      </span>
-                    </Link>
+                  {chats.slice(0, 30).map((item) => (
+                    <div key={item.id} className="sidebar-chat">
+                      <Link
+                        to={`${ROUTES.CHAT}?conversation=${item.id}`}
+                        className={`sidebar-set ${
+                          String(item.id) === activeChatId ? "active" : ""
+                        }`}
+                        title={item.title}
+                      >
+                        <span className="sidebar-set-icon">
+                          <MessageSquare size={16} />
+                        </span>
+                        <span className="sidebar-set-text">
+                          <strong>{item.title}</strong>
+                          <small>{formatShortDate(item.updated_at)}</small>
+                        </span>
+                      </Link>
+
+                      <button
+                        type="button"
+                        className="sidebar-chat-delete"
+                        onClick={() => deleteChat(item.id)}
+                        aria-label={`Delete chat ${item.title}`}
+                        title="Delete chat"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
             )
-          : flashSets.length > 0 && (
-              <div className="sidebar-sets">
-                <div className="sidebar-section-title">
-                  <span>Flashcard sets</span>
-                  <span className="sidebar-count">{flashSets.length}</span>
-                </div>
+          : isQuizPage
+            ? quizzes.length > 0 && (
+                <div className="sidebar-sets">
+                  <div className="sidebar-section-title">
+                    <span>Quizzes</span>
+                    <span className="sidebar-count">{quizzes.length}</span>
+                  </div>
 
-                <div className="notes-list">
-                  {flashSets.slice(0, 15).map((item) => (
-                    <Link
-                      key={item.id}
-                      to={`${ROUTES.FLASHCARDS}?set=${item.id}`}
-                      className={`sidebar-set ${
-                        String(item.id) === activeSetId ? "active" : ""
-                      }`}
-                      title={item.title}
-                    >
-                      <span className="sidebar-set-icon">
-                        <Layers3 size={16} />
-                      </span>
-                      <span className="sidebar-set-text">
-                        <strong>{item.title}</strong>
-                        <small>{item.card_count} cards</small>
-                      </span>
-                    </Link>
-                  ))}
+                  <div className="notes-list">
+                    {quizzes.slice(0, 15).map((item) => (
+                      <Link
+                        key={item.id}
+                        to={`${ROUTES.QUIZ}?quiz=${item.id}`}
+                        className={`sidebar-set ${
+                          String(item.id) === activeQuizId ? "active" : ""
+                        }`}
+                        title={item.title}
+                      >
+                        <span className="sidebar-set-icon">
+                          <BrainCircuit size={16} />
+                        </span>
+                        <span className="sidebar-set-text">
+                          <strong>{item.title}</strong>
+                          <small>{item.question_count} questions</small>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            : flashSets.length > 0 && (
+                <div className="sidebar-sets">
+                  <div className="sidebar-section-title">
+                    <span>Flashcard sets</span>
+                    <span className="sidebar-count">{flashSets.length}</span>
+                  </div>
+
+                  <div className="notes-list">
+                    {flashSets.slice(0, 15).map((item) => (
+                      <Link
+                        key={item.id}
+                        to={`${ROUTES.FLASHCARDS}?set=${item.id}`}
+                        className={`sidebar-set ${
+                          String(item.id) === activeSetId ? "active" : ""
+                        }`}
+                        title={item.title}
+                      >
+                        <span className="sidebar-set-icon">
+                          <Layers3 size={16} />
+                        </span>
+                        <span className="sidebar-set-text">
+                          <strong>{item.title}</strong>
+                          <small>{item.card_count} cards</small>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
 
         {/* =================================
             UPLOADED NOTES

@@ -22,21 +22,10 @@ from backend.routes.config import PROVIDERS
 
 
 
-def get_messages(system_prompt, history):
-    """Build a full OpenAI messages list from the system prompt and history.
-
-    Prepends the system prompt then interleaves the stored conversation turns
-    in chronological order. The caller appends the current user message after.
-
-    Args:
-        system_prompt: The instruction string placed in the system role.
-
-    Returns:
-        A list of {"role": ..., "content": ...} dicts ready for the API.
-    """
+def get_messages(system_prompt, history=None):
     messages = [{"role": "system", "content": system_prompt}]
-    for turn in history:
-        messages.extend(turn)  # Each turn is a (user_dict, assistant_dict) tuple
+    if history:
+        messages.extend(history)
     return messages
 
 
@@ -89,8 +78,8 @@ def GenerateAnswer(question, context, history= [None]):
     )
     messages = get_messages(system_prompt, history)
     
-    # user_content = f"QUESTION:\n{question}\n\nNOTEBOOK CONTEXT:\n{context}"
-    # messages.append({"role": "user", "content": user_content})
+    user_content = f"QUESTION:\n{question}\n\nNOTEBOOK CONTEXT:\n{context}"
+    messages.append({"role": "user", "content": user_content})
 
     # Try each configured provider in priority order
     for provider in PROVIDERS:
@@ -99,16 +88,31 @@ def GenerateAnswer(question, context, history= [None]):
             print(f"Skipping {provider['name']}: No API key.")
             continue
         try:
-            print(f"Connecting to: {provider['name']}...")
-            client = OpenAI(base_url=provider["url"], api_key=provider["key"])
-            response = client.chat.completions.create(
-                model=provider["model"],
-                messages=messages,
-                temperature=0.1,  # Low temperature for factual, consistent answers
-            )
-            print(f"[SUCCESS] {provider['name']}")
+            if provider["name"] == "Google AI Studio":
+                print(provider["name"], "TRYING")
+                client = OpenAI(base_url=provider["url"], api_key=provider["key"], timeout=60, max_retries=0)
+                response = client.chat.completions.create(
+                    model=provider["model"],
+                    messages=messages,
+                    temperature=0.1,  # Low temperature for factual, consistent answers
+                )
+                print(f"[SUCCESS] {provider['name']}")
             
-            return response.choices[0].message.content
+                return response.choices[0].message.content
+            elif provider["name"] == "Groq Cloud":
+                client = OpenAI(base_url=provider["url"], api_key=provider["key"], timeout=15, max_retries=0)
+                response = client.chat.completions.create(model=provider["model"], messages=messages, temperature=0.1,  # Low temperature for factual, consistent answers
+)
+                print(f"[SUCCESS] {provider['name']}")
+                        
+                return response.choices[0].message.content
+            elif provider["name"] == "OpenRouter Free":
+                client = OpenAI(base_url=provider["url"], api_key=provider["key"], timeout=120, max_retries=0)
+                response = client.chat.completions.create(model=provider["model"], messages=messages, temperature=0.1,  # Low temperature for factual, consistent answers
+            )
+                print(f"[SUCCESS] {provider['name']}")
+            
+                return response.choices[0].message.content
         except Exception as error:
             print(f"Warning: {provider['name']} failed: {error}")
             continue

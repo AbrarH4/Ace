@@ -1,10 +1,19 @@
-import { Upload, FileText } from "lucide-react";
+import { Upload, FileText, Plus } from "lucide-react";
+
 type ChatHeaderProps = {
   onUploadClick: () => void;
+  onNewChat: () => void;
   isNotesUploaded: boolean;
+  isLoading: boolean;
 };
+
 // CHAT HEADER
-function ChatHeader({ onUploadClick, isNotesUploaded }: ChatHeaderProps) {
+function ChatHeader({
+  onUploadClick,
+  onNewChat,
+  isNotesUploaded,
+  isLoading,
+}: ChatHeaderProps) {
   return (
     <header className="chat-header">
       <div className="header-left">
@@ -18,10 +27,23 @@ function ChatHeader({ onUploadClick, isNotesUploaded }: ChatHeaderProps) {
           )}
         </div>
       </div>
-      <button className="upload-btn" onClick={onUploadClick}>
-        <Upload size={18} />
-        Upload Notes
-      </button>
+
+      <div className="header-actions">
+        <button
+          className="new-chat-btn"
+          onClick={onNewChat}
+          disabled={isLoading}
+          title="New chat"
+        >
+          <Plus size={18} />
+          <span>New chat</span>
+        </button>
+
+        <button className="upload-btn" onClick={onUploadClick}>
+          <Upload size={18} />
+          Upload Notes
+        </button>
+      </div>
     </header>
   );
 }

@@ -3072,3 +3072,109 @@ body {
     padding-left: 12px;
   }
 }
+/* ---------- Chat header buttons ---------- */
+
+.header-actions {
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding: 0.8rem 1.1rem;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+
+  background: transparent;
+  color: #cbd5e1;
+
+  font-family: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.new-chat-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+}
+
+.new-chat-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Sidebar: recent chats ---------- */
+
+.sidebar-chat {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sidebar-chat .sidebar-set {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-chat-delete {
+  flex-shrink: 0;
+
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 8px;
+
+  background: transparent;
+  color: #64748b;
+
+  opacity: 0.55;
+  cursor: pointer;
+
+  transition:
+    opacity 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.sidebar-chat:hover .sidebar-chat-delete,
+.sidebar-chat-delete:focus-visible {
+  opacity: 1;
+}
+
+.sidebar-chat-delete:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+}
+
+@media (max-width: 700px) {
+  /* on phones the "New chat" button shows just its icon */
+  .new-chat-btn span {
+    display: none;
+  }
+
+  .new-chat-btn {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+}

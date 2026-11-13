@@ -55,7 +55,15 @@ function ChatArea({
             </button>
           </div>
         ) : (
-          ""
+          <div className="chat-empty">
+            <div className="empty-icon">
+              <Brain size={44} />
+            </div>
+
+            <h2>What would you like to know?</h2>
+
+            <p>Ask a question about your notes to start a new chat.</p>
+          </div>
         )}
       </section>
     );

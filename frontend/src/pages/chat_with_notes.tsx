@@ -1,17 +1,24 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import Sidebar from "../components/chat/Sidebar";
 import ChatHeader from "../components/chat/ChatHeader";
 import ChatArea from "../components/chat/ChatArea";
 import ChatInput from "../components/chat/ChatInput";
 import { API_URL } from "../config/api";
+
 export type Message = {
   role: "user" | "assistant";
   content: string;
 };
 
+type SavedMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 function ChatWithNotes() {
-  // Stores all messages in the conversation
+  // Stores all messages of the chat that is on screen
   const [messages, setMessages] = useState<Message[]>([]);
 
   // Controls the "ACE is thinking..." loading animation
@@ -20,32 +27,109 @@ function ChatWithNotes() {
   // Controls whether notes have been successfully uploaded
   const [isNotesUploaded, setIsNotesUploaded] = useState(false);
 
-  // =====================================================
-  // ADD USER MESSAGE
-  // =====================================================
-  // This is called immediately when the user presses send.
-  // The question appears in the chat before FastAPI responds.
-  const checkNotes = async () => {
-    try {
-      const notesResponse = await fetch(`${API_URL}/notes`, {
-        credentials: "include",
-      });
+  // The id of the chat on screen. null means a brand-new chat that
+  // the server has not saved yet.
+  const [conversationId, setConversationId] = useState<number | null>(null);
 
-      if (!notesResponse.ok) {
-        throw new Error("Failed to fetch notes");
-      }
+  const [error, setError] = useState<string | null>(null);
 
-      const notes = await notesResponse.json();
+  // The address holds the open chat, like /chat?conversation=12
+  const [searchParams, setSearchParams] = useSearchParams();
+  const conversationParam = searchParams.get("conversation");
 
-      setIsNotesUploaded(notes.length > 0);
-    } catch (error) {
-      console.error("Failed to load notes:", error);
-      setIsNotesUploaded(false);
-    }
-  };
+  // A sticky note that remembers which chat is on screen. Unlike state,
+  // changing it does not redraw the page.
+  const shownConversation = useRef<number | null>(null);
+
+  // Check once, when the page opens, whether the user has any notes
   useEffect(() => {
+    const checkNotes = async () => {
+      try {
+        const notesResponse = await fetch(`${API_URL}/notes`, {
+          credentials: "include",
+        });
+
+        if (!notesResponse.ok) {
+          throw new Error("Failed to fetch notes");
+        }
+
+        const notes = await notesResponse.json();
+        setIsNotesUploaded(notes.length > 0);
+      } catch (err) {
+        console.error("Failed to load notes:", err);
+        setIsNotesUploaded(false);
+      }
+    };
+
     checkNotes();
-  });
+  }, []);
+
+  // React to the address: "?conversation=12" means open chat 12,
+  // and no "conversation" means a new chat.
+  useEffect(() => {
+    if (!conversationParam) {
+      // We were showing a saved chat and the address lost it: clear the screen
+      if (shownConversation.current !== null) {
+        shownConversation.current = null;
+        setConversationId(null);
+        setMessages([]);
+      }
+      return;
+    }
+
+    const id = Number(conversationParam);
+
+    // This chat is already on screen (we just created it ourselves)
+    if (shownConversation.current === id) return;
+
+    let ignore = false;
+
+    const loadConversation = async () => {
+      setError(null);
+
+      try {
+        const response = await fetch(`${API_URL}/conversations/${id}`, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error("Could not open that chat.");
+        }
+
+        const data = await response.json();
+
+        if (!ignore) {
+          shownConversation.current = id;
+          setConversationId(id);
+          setMessages(
+            Array.isArray(data.messages)
+              ? data.messages.map((item: SavedMessage) => ({
+                  role: item.role,
+                  content: item.content,
+                }))
+              : [],
+          );
+        }
+      } catch (err) {
+        if (!ignore) {
+          console.error(err);
+          setError(
+            err instanceof Error ? err.message : "Something went wrong.",
+          );
+        }
+      }
+    };
+
+    loadConversation();
+
+    return () => {
+      ignore = true;
+    };
+  }, [conversationParam]);
+
+  // =====================================================
+  // ADD MESSAGES TO THE SCREEN
+  // =====================================================
+
   const addUserMessage = (userMessage: string) => {
     setMessages((previousMessages) => [
       ...previousMessages,
@@ -56,11 +140,6 @@ function ChatWithNotes() {
     ]);
   };
 
-  // =====================================================
-  // ADD ASSISTANT MESSAGE
-  // =====================================================
-  // This is called after FastAPI sends back ACE's answer.
-
   const addAssistantMessage = (assistantMessage: string) => {
     setMessages((previousMessages) => [
       ...previousMessages,
@@ -69,6 +148,24 @@ function ChatWithNotes() {
         content: assistantMessage,
       },
     ]);
+  };
+
+  // The server tells us which chat the question belongs to
+  const handleConversationId = (id: number) => {
+    shownConversation.current = id; // set first, so the address effect skips reloading
+    setConversationId(id);
+    setSearchParams({ conversation: String(id) }, { replace: true });
+
+    // Tell the sidebar to reload its list of chats
+    window.dispatchEvent(new Event("conversations-changed"));
+  };
+
+  const handleNewChat = () => {
+    shownConversation.current = null;
+    setConversationId(null);
+    setMessages([]);
+    setError(null);
+    setSearchParams({});
   };
 
   // =====================================================
@@ -118,21 +215,16 @@ function ChatWithNotes() {
           credentials: "include",
         });
 
-        // ============================================
-        // SUCCESSFUL UPLOAD
-        // ============================================
-
         if (response.ok) {
-          console.log("FOLDER SENT TO BACKEND");
-
-          // Update the UI
-          // ChatHeader and ChatArea will re-render
           setIsNotesUploaded(true);
+
+          // Tell the sidebar to reload its list of notes
+          window.dispatchEvent(new Event("notes-changed"));
         } else {
           console.error("Upload failed:", response.status);
         }
-      } catch (error) {
-        console.error("Upload failed:", error);
+      } catch (err) {
+        console.error("Upload failed:", err);
       }
     }
   };
@@ -143,21 +235,10 @@ function ChatWithNotes() {
 
   return (
     <div className="chat-layout">
-      {/* ============================================= */}
-      {/* SIDEBAR                                       */}
-      {/* ============================================= */}
-
       <Sidebar />
 
-      {/* ============================================= */}
-      {/* MAIN CHAT                                     */}
-      {/* ============================================= */}
-
       <main className="chat-main">
-        {/* =========================================== */}
-        {/* HIDDEN FOLDER PICKER                       */}
-        {/* =========================================== */}
-
+        {/* Hidden folder picker */}
         <input
           id="file-input"
           type="file"
@@ -170,18 +251,18 @@ function ChatWithNotes() {
           onChange={handleFolderChange}
         />
 
-        {/* =========================================== */}
-        {/* CHAT HEADER                                 */}
-        {/* =========================================== */}
-
         <ChatHeader
           onUploadClick={handleUploadClick}
+          onNewChat={handleNewChat}
           isNotesUploaded={isNotesUploaded}
+          isLoading={isLoading}
         />
 
-        {/* =========================================== */}
-        {/* CHAT AREA                                   */}
-        {/* =========================================== */}
+        {error && (
+          <div className="flashcard-error" role="alert">
+            {error}
+          </div>
+        )}
 
         <ChatArea
           messages={messages}
@@ -190,13 +271,11 @@ function ChatWithNotes() {
           isNotesUploaded={isNotesUploaded}
         />
 
-        {/* =========================================== */}
-        {/* CHAT INPUT                                  */}
-        {/* =========================================== */}
-
         <ChatInput
           isLoading={isLoading}
           setIsLoading={setIsLoading}
+          conversationId={conversationId}
+          onConversationId={handleConversationId}
           addUserMessage={addUserMessage}
           addAssistantMessage={addAssistantMessage}
         />
