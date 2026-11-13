@@ -188,5 +188,20 @@ class Message(Base):
         nullable=False,
     )
     
+class AIUsage(Base):
+    __tablename__ = "ai_usage"
 
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    kind: Mapped[str] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        nullable=False,
+        index=True,
+    )
 Base.metadata.create_all(bind=engine)

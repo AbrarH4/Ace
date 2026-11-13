@@ -4,9 +4,9 @@ from backend.routes.GenQuiz import get_quiz_context, test_evaluation
 from backend.database import get_content_db
 from backend.database import Note, QuizSet, QuizAttempts
 from backend.routes.provider import GenerateQuiz
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select, delete
-
+from backend.quota import use_quota
 from backend.database import get_user_notes
 
 
@@ -25,9 +25,8 @@ class QuizEvaluationRequest(BaseModel):
     quiz_id: int | None = None
 
 class ReceiveTypes(BaseModel):
-    topic: str
-    count: int
-    
+    topic: str = Field(default="", max_length=100)
+    count: int = Field(default=10, ge=1, le=20)
 
 
 
@@ -43,8 +42,11 @@ def Gen_Quiz(
         notes=notes,
         topic=request.topic
     )
+    
     if context is None:
         raise HTTPException(status_code=404, detail="UPLOAD NOTES FIRST!")
+    context = context[:20000]
+    use_quota(db, user_id, "quiz")
     generated_quiz = GenerateQuiz(
         context=context,
         quiz_count=request.count

@@ -152,7 +152,12 @@ function Flashcards() {
         }),
       });
       if (!flashcardResponse.ok) {
-        throw new Error("Could not generate flashcards. Please try again.");
+        const errorData = await flashcardResponse.json().catch(() => null);
+        throw new Error(
+          errorData && typeof errorData.detail === "string"
+            ? errorData.detail
+            : "Could not generate flashcards. Please try again.",
+        );
       }
 
       const cards = await flashcardResponse.json();

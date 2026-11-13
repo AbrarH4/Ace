@@ -301,7 +301,12 @@ function Quiz() {
         }),
       });
       if (!quizResponse.ok) {
-        throw new Error("Could not generate the quiz. Please try again.");
+        const errorData = await quizResponse.json().catch(() => null);
+        throw new Error(
+          errorData && typeof errorData.detail === "string"
+            ? errorData.detail
+            : "Could not generate the quiz. Please try again.",
+        );
       }
 
       const generated = await quizResponse.json();

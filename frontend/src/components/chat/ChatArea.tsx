@@ -53,6 +53,11 @@ function ChatArea({
               <UploadCloud size={18} />
               Upload Your First Document
             </button>
+            <p className="privacy-note">
+              Your notes are stored on our server and sent to AI providers
+              (Google, Groq, OpenRouter) to answer your questions. Please don't
+              upload sensitive documents.
+            </p>
           </div>
         ) : (
           <div className="chat-empty">

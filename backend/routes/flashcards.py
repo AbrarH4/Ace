@@ -3,15 +3,15 @@ from fastapi.responses import Response
 from backend.auth.dependencies import get_current_user
 from backend.routes.provider import generateFlashcard
 from backend.database import get_content_db, Note, FlashcardSet 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select , delete
 import json
-
+from backend.quota import use_quota
 Flashcard_router = APIRouter()
 
 class FlashcardRequest(BaseModel):
-    topic: str
-    count: int
+    topic: str = Field(default="", max_length=100)
+    count: int = Field(default=10, ge=1, le=20)
 
 @Flashcard_router.post("/flashcards")
 async def generate_flashcards(
@@ -23,7 +23,10 @@ async def generate_flashcards(
     result = db.execute(select(Note).where(Note.user_id == user_id))
     notes = result.scalars().all()
     contexts = "".join(note.content for note in notes)
+    contexts = contexts[:20000]
     # print(contexts, request.count, request.topic)
+    use_quota(db, user_id, "flashcards") 
+    
     responseFlashcard = generateFlashcard(
     context=contexts,
     flashcard_count=request.count,

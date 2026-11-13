@@ -3178,3 +3178,11 @@ body {
     gap: 8px;
   }
 }
+.privacy-note {
+  max-width: 420px;
+  margin: 18px auto 0;
+
+  color: #64748b;
+  font-size: 12.5px;
+  line-height: 1.6;
+}

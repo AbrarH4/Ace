@@ -11,7 +11,7 @@ from backend.database import (
 )
 from backend.routes.provider import GenerateAnswer
 from backend.routes.retrieval import Ranking_System, get_relevant_chunks, keyword
-
+from backend.quota import use_quota
 router_question = APIRouter()
 HISTORY_BUDGET = 6000
 
@@ -86,6 +86,7 @@ def receive_question(
                 if message["role"] == "user":
                     keywords = keywords + keyword(message["content"])
                     break
+    use_quota(db, user_id, "chat")
     answer = GenerateAnswer(text, context = context, history = history)
 
     if answer is None:

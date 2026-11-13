@@ -5,7 +5,9 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from backend.auth.dependencies import get_current_user
 from backend.database import get_content_db, Note
 from backend.routes  import loader
+import re
 
+CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 router = APIRouter()
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB per file
 
@@ -27,7 +29,7 @@ def upload_notes(
 
         content = upload.file.read()
         text = loader.extract_text(upload.filename, content)
-
+        text = CONTROL_CHARS.sub("", text)
         if not text:
             skipped.append(upload.filename)
             continue
