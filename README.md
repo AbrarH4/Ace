@@ -4,13 +4,8 @@
 
 **Status:** complete. ACE was built as a learning project and is no longer under active development. It stays online on free tiers, so it can be slow or reach its daily limits.
 
-**Live demo:** https://YOUR-APP.vercel.app *(replace with your Vercel link)*
+**Live demo:** https://ace-weld-rho.vercel.app/
 
-<!-- Add 2-3 screenshots here, for example:
-![Chat](docs/screenshots/chat.png)
-![Flashcards](docs/screenshots/flashcards.png)
-![Quiz review](docs/screenshots/quiz-review.png)
--->
 
 ## What it does
 
